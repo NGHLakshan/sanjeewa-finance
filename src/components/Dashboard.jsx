@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { subscribeToTransactions } from "../services/transactions";
 import { subscribeToCategories, addCategory, updateCategory, deleteCategory } from "../services/categories";
-import { TrendingUp, TrendingDown, Wallet, Calendar, Filter, PlusCircle, Building2, X, Settings2, Check, Trash2, ChevronRight, ArrowLeft, Layers, Pencil, Clock, CreditCard } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Calendar, Filter, PlusCircle, Building2, X, Settings2, Check, Trash2, ChevronRight, ArrowLeft, Layers, Pencil, Clock, CreditCard, Banknote } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from "recharts";
 import CategoryManagerModal from "./CategoryManagerModal";
@@ -226,15 +226,16 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
     });
   }, [filtered]);
 
-  const { totalIncome, totalExpense, cashBalance, bankBalance, creditCardSpent } = useMemo(() => {
+  const { totalIncome, totalExpense, cashBalance, bankBalance, creditCardSpent, debitCardSpent } = useMemo(() => {
     let inc = 0, exp = 0;
-    let cash = 0, bank = 0, creditCard = 0;
+    let cash = 0, bank = 0, creditCard = 0, debitCard = 0;
     filtered.forEach(t => {
       const amount = Number(t.amount) || 0;
       const method = t.paymentMethod || "Cash";
       const isCash = method === "Cash";
-      const isBank = method === "Bank" || method === "Bank Transfer" || method === "Debit Card";
+      const isBank = method === "Bank" || method === "Bank Transfer";
       const isCreditCard = method === "Credit Card";
+      const isDebitCard = method === "Debit Card";
 
       if (t.type === "Income") {
         inc += amount;
@@ -245,9 +246,17 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
         if (isCash) cash -= amount;
         if (isBank) bank -= amount;
         if (isCreditCard) creditCard += amount;
+        if (isDebitCard) debitCard += amount;
       }
     });
-    return { totalIncome: inc, totalExpense: exp, cashBalance: cash, bankBalance: bank, creditCardSpent: creditCard };
+    return { 
+      totalIncome: inc, 
+      totalExpense: exp, 
+      cashBalance: cash, 
+      bankBalance: bank, 
+      creditCardSpent: creditCard,
+      debitCardSpent: debitCard
+    };
   }, [filtered]);
 
   const netProfit = totalIncome - totalExpense;
@@ -268,8 +277,12 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
     if (!selectedMethod) return null;
     const methodTx = filtered.filter(t => {
       if (selectedMethod === "Credit Card") return t.paymentMethod === "Credit Card";
+      if (selectedMethod === "Debit Card") return t.paymentMethod === "Debit Card";
       if (selectedMethod === "Cash") return t.paymentMethod === "Cash";
-      return t.paymentMethod === "Bank" || t.paymentMethod === "Bank Transfer" || t.paymentMethod === "Debit Card";
+      if (selectedMethod === "Bank Transfer" || selectedMethod === "Bank") {
+        return t.paymentMethod === "Bank" || t.paymentMethod === "Bank Transfer";
+      }
+      return t.paymentMethod === selectedMethod;
     });
     let inc = 0, exp = 0;
     const categoryTotals = {};
@@ -301,14 +314,22 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
       count: categoryTotals[cat.name]?.count || 0,
     }));
 
+    const totalDisplay = selectedMethod === "Cash" 
+      ? cashBalance 
+      : (selectedMethod === "Bank" || selectedMethod === "Bank Transfer")
+      ? bankBalance
+      : selectedMethod === "Credit Card"
+      ? creditCardSpent
+      : debitCardSpent;
+
     return {
       chartData: mChartData,
       breakdown,
       totalIncome: inc,
       totalExpense: exp,
-      total: selectedMethod === "Cash" ? cashBalance : selectedMethod === "Credit Card" ? creditCardSpent : bankBalance,
+      total: totalDisplay,
     };
-  }, [selectedMethod, filtered, cashBalance, bankBalance, creditCardSpent, categories]);
+  }, [selectedMethod, filtered, cashBalance, bankBalance, creditCardSpent, debitCardSpent, categories]);
   const categoryDetailsData = useMemo(() => {
     if (!viewingCategory) return null;
     
@@ -530,60 +551,98 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
         </motion.button>
       )}
 
-      {/* Payment Method Balance & Spent Cards */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-4 mb-6">
+      {/* 4 Payment Method Cards (Cash, Bank Transfer, Credit Card, Debit Card) */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {/* Cash */}
         <motion.button 
           onClick={() => setSelectedMethod("Cash")}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden glass-card p-3 sm:p-5 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-transparent text-left cursor-pointer outline-none"
+          className="relative overflow-hidden glass-card p-3.5 sm:p-4 border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-transparent text-left cursor-pointer outline-none rounded-2xl group hover:border-emerald-500/50 transition-all"
         >
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
-              <Wallet size={14} className="text-emerald-400" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Banknote size={16} className="text-emerald-400" />
+              </div>
+              <span className="text-xs font-bold text-white tracking-wide">Cash</span>
             </div>
-            <p className="text-[10px] sm:text-xs font-semibold text-emerald-400/80 uppercase tracking-wider truncate">Cash</p>
+            <span className="text-[9px] uppercase font-bold text-emerald-400/90 bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/20">In Hand</span>
           </div>
-          <h3 className="text-sm sm:text-lg font-bold text-white tracking-tight truncate">
+          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight">
             {cashBalance < 0 && "−"}{formatCurrency(Math.abs(cashBalance))}
           </h3>
+          <p className="text-[11px] text-slate-400 mt-0.5">Cash wallet balance</p>
         </motion.button>
         
+        {/* Bank Transfer */}
         <motion.button 
-          onClick={() => setSelectedMethod("Bank")}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
+          onClick={() => setSelectedMethod("Bank Transfer")}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="relative overflow-hidden glass-card p-3 sm:p-5 border border-sky-500/20 bg-gradient-to-br from-sky-500/10 to-transparent text-left cursor-pointer outline-none"
+          className="relative overflow-hidden glass-card p-3.5 sm:p-4 border border-sky-500/25 bg-gradient-to-br from-sky-500/10 to-transparent text-left cursor-pointer outline-none rounded-2xl group hover:border-sky-500/50 transition-all"
         >
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-sky-500/20 flex items-center justify-center shrink-0">
-              <Building2 size={14} className="text-sky-400" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Building2 size={16} className="text-sky-400" />
+              </div>
+              <span className="text-xs font-bold text-white tracking-wide truncate">Bank Transfer</span>
             </div>
-            <p className="text-[10px] sm:text-xs font-semibold text-sky-400/80 uppercase tracking-wider truncate">Bank</p>
+            <span className="text-[9px] uppercase font-bold text-sky-400/90 bg-sky-500/15 px-2 py-0.5 rounded-full border border-sky-500/20">Account</span>
           </div>
-          <h3 className="text-sm sm:text-lg font-bold text-white tracking-tight truncate">
+          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight">
             {bankBalance < 0 && "−"}{formatCurrency(Math.abs(bankBalance))}
           </h3>
+          <p className="text-[11px] text-slate-400 mt-0.5">Bank / Transfer balance</p>
         </motion.button>
 
+        {/* Credit Card */}
         <motion.button 
           onClick={() => setSelectedMethod("Credit Card")}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="relative overflow-hidden glass-card p-3 sm:p-5 border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-transparent text-left cursor-pointer outline-none"
+          className="relative overflow-hidden glass-card p-3.5 sm:p-4 border border-purple-500/25 bg-gradient-to-br from-purple-500/10 to-transparent text-left cursor-pointer outline-none rounded-2xl group hover:border-purple-500/50 transition-all"
         >
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
-              <CreditCard size={14} className="text-purple-400" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <CreditCard size={16} className="text-purple-400" />
+              </div>
+              <span className="text-xs font-bold text-white tracking-wide truncate">Credit Card</span>
             </div>
-            <p className="text-[10px] sm:text-xs font-semibold text-purple-400/80 uppercase tracking-wider truncate">Card Spent</p>
+            <span className="text-[9px] uppercase font-bold text-purple-400/90 bg-purple-500/15 px-2 py-0.5 rounded-full border border-purple-500/20">Spends</span>
           </div>
-          <h3 className="text-sm sm:text-lg font-bold text-purple-300 tracking-tight truncate">
+          <h3 className="text-base sm:text-lg font-bold font-mono text-purple-300 tracking-tight">
             {formatCurrency(creditCardSpent)}
           </h3>
+          <p className="text-[11px] text-slate-400 mt-0.5">Credit card monthly bill</p>
+        </motion.button>
+
+        {/* Debit Card */}
+        <motion.button 
+          onClick={() => setSelectedMethod("Debit Card")}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+          className="relative overflow-hidden glass-card p-3.5 sm:p-4 border border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-transparent text-left cursor-pointer outline-none rounded-2xl group hover:border-amber-500/50 transition-all"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <Wallet size={16} className="text-amber-400" />
+              </div>
+              <span className="text-xs font-bold text-white tracking-wide truncate">Debit Card</span>
+            </div>
+            <span className="text-[9px] uppercase font-bold text-amber-400/90 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/20">Spends</span>
+          </div>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-amber-300 tracking-tight">
+            {formatCurrency(debitCardSpent)}
+          </h3>
+          <p className="text-[11px] text-slate-400 mt-0.5">Direct debit card spend</p>
         </motion.button>
       </div>
 
@@ -837,7 +896,15 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             <div className="shrink-0 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/60 px-4 pt-10 pb-4">
               <div className="max-w-lg mx-auto flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  {selectedMethod === "Cash" ? <Wallet size={20} className="text-emerald-400" /> : <Building2 size={20} className="text-sky-400" />}
+                  {selectedMethod === "Cash" ? (
+                    <Banknote size={20} className="text-emerald-400" />
+                  ) : selectedMethod === "Credit Card" ? (
+                    <CreditCard size={20} className="text-purple-400" />
+                  ) : selectedMethod === "Debit Card" ? (
+                    <Wallet size={20} className="text-amber-400" />
+                  ) : (
+                    <Building2 size={20} className="text-sky-400" />
+                  )}
                   {selectedMethod} Details
                 </h2>
                 <button
