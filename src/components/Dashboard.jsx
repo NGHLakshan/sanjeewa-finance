@@ -130,6 +130,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
   const [selectedNetSubFilter, setSelectedNetSubFilter] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [visibleTxLimit, setVisibleTxLimit] = useState(10);
+  const [pmCatFilter, setPmCatFilter] = useState(null);
 
   // No scroll refs needed — each modal uses a separate inner overflow-y-auto div
   // that is always a fresh DOM element, so scrollTop is always 0 on open.
@@ -188,6 +189,11 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
       });
     }
   }, [showNetCategoryModal, selectedNetCategory]);
+
+  useEffect(() => {
+    setPmCatFilter(null);
+    setVisibleTxLimit(10);
+  }, [selectedMethod]);
 
   useEffect(() => {
     if (selectedMethod) {
@@ -322,12 +328,19 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
       ? creditCardSpent
       : debitCardSpent;
 
+    const sortedMethodTx = [...methodTx].sort((a, b) => {
+      const pad = n => String(n).padStart(2, '0');
+      const strA = `${a.date.getFullYear()}-${pad(a.date.getMonth()+1)}-${pad(a.date.getDate())}T${a.time||'00:00'}`;
+      const strB = `${b.date.getFullYear()}-${pad(b.date.getMonth()+1)}-${pad(b.date.getDate())}T${b.time||'00:00'}`;
+      return new Date(strB) - new Date(strA);
+    });
     return {
       chartData: mChartData,
       breakdown,
       totalIncome: inc,
       totalExpense: exp,
       total: totalDisplay,
+      transactions: sortedMethodTx,
     };
   }, [selectedMethod, filtered, cashBalance, bankBalance, creditCardSpent, debitCardSpent, categories]);
   const categoryDetailsData = useMemo(() => {
@@ -984,85 +997,177 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               )}
 
 
-              {/* ── Income Categories ── */}
+              {/* ── Stacked Bar Chart + Inline Transactions ── */}
               {(() => {
-                const incCats = modalData.breakdown.filter(c => {
-                  const found = categories.find(cat => cat.name === c.name);
-                  return found ? found.type === 'Income' : c.income > 0;
-                });
-                const expCats = modalData.breakdown.filter(c => {
-                  const found = categories.find(cat => cat.name === c.name);
-                  return found ? found.type === 'Expense' : c.expense > 0;
-                });
-                const renderCatCard = (cat, accentColor) => {
-                  const isIncome = accentColor === 'emerald';
-                  const amount = isIncome ? cat.income : cat.expense;
+                const INC_COLORS = ['#10b981','#34d399','#6ee7b7','#059669','#14b8a6','#0f766e'];
+                const EXP_COLORS = ['#ef4444','#f97316','#f59e0b','#a855f7','#ec4899','#06b6d4','#fb923c','#8b5cf6'];
+
+                const incCats = modalData.breakdown
+                  .filter(c => { const f = categories.find(x => x.name === c.name); return f ? f.type === 'Income' : c.income > 0; })
+                  .filter(c => c.income > 0);
+                const expCats = modalData.breakdown
+                  .filter(c => { const f = categories.find(x => x.name === c.name); return f ? f.type === 'Expense' : c.expense > 0; })
+                  .filter(c => c.expense > 0);
+
+                // Build stacked bar data rows
+                const incEntry = { type: '↑ Income' };
+                incCats.forEach(c => { incEntry[c.name] = c.income; });
+                const expEntry = { type: '↓ Expenses' };
+                expCats.forEach(c => { expEntry[c.name] = c.expense; });
+                const stackData = [
+                  ...(modalData.totalIncome > 0 ? [incEntry] : []),
+                  ...(modalData.totalExpense > 0 ? [expEntry] : []),
+                ];
+
+                // Legend items
+                const legendItems = [
+                  ...incCats.map((c, i) => ({ name: c.name, color: INC_COLORS[i % INC_COLORS.length], amount: c.income, isIncome: true })),
+                  ...expCats.map((c, i) => ({ name: c.name, color: EXP_COLORS[i % EXP_COLORS.length], amount: c.expense, isIncome: false })),
+                ];
+
+                // Filtered transaction list
+                const filteredTx = pmCatFilter
+                  ? modalData.transactions.filter(t => t.category === pmCatFilter)
+                  : modalData.transactions;
+
+                const renderTxRow = (t) => {
+                  const isIncome = t.type === 'Income';
+                  const txTime = formatTransactionTime(t.time, t.createdAt);
                   return (
-                    <motion.div
-                      key={cat.id || cat.name}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => { setViewingCategory(cat.name); setVisibleTxLimit(10); }}
-                      className={`glass-card p-4 border cursor-pointer transition-all shadow-lg group relative overflow-hidden text-left ${
-                        isIncome
-                          ? 'border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/5'
-                          : 'border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5'
-                      }`}
+                    <div key={t.id} onClick={() => setEditingTransaction(t)}
+                      className="glass-card p-3.5 flex items-center gap-3 hover:bg-slate-900/80 transition-colors border border-slate-800/80 cursor-pointer group"
+                      title="Click to edit or delete"
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="min-w-0 pr-2">
-                          <p className={`text-base font-bold text-white truncate transition-colors ${
-                            isIncome ? 'group-hover:text-emerald-400' : 'group-hover:text-red-400'
-                          }`}>
-                            {cat.name}
-                          </p>
-                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                            {cat.count} {cat.count === 1 ? 'transaction' : 'transactions'}
-                          </p>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                        isIncome ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+                      }`}>
+                        {isIncome ? <TrendingUp size={18}/> : <TrendingDown size={18}/>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-white font-bold text-sm truncate max-w-[200px]">{t.category || 'General'}</p>
+                          {t.description && <span className="text-[11px] text-slate-400 truncate max-w-[140px]">• {t.description}</span>}
                         </div>
-                        <div className={`w-7 h-7 rounded-lg bg-slate-800/60 flex items-center justify-center text-slate-400 transition-colors shrink-0 ${
-                          isIncome ? 'group-hover:text-emerald-400 group-hover:bg-emerald-500/10' : 'group-hover:text-red-400 group-hover:bg-red-500/10'
+                        <div className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                          {renderPaymentBadge(t.paymentMethod)}
+                          <span className="text-slate-600">•</span>
+                          <span className="text-slate-300 font-medium text-[11px] whitespace-nowrap">
+                            {t.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                          </span>
+                          {txTime && (<><span className="text-slate-600">•</span>
+                            <span className="font-mono text-slate-300 text-[11px] whitespace-nowrap flex items-center gap-1">
+                              <Clock size={11} className="text-slate-400 shrink-0"/>{txTime}
+                            </span></>)}
+                        </div>
+                        {t.description && (
+                          <p className="text-[11px] text-slate-400 mt-1 flex items-start gap-1">
+                            <span className="text-slate-600 shrink-0">"</span>
+                            <span className="truncate italic text-slate-300">{t.description}</span>
+                            <span className="text-slate-600 shrink-0">"</span>
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0 flex items-center gap-2">
+                        <span className={`text-sm font-bold font-mono whitespace-nowrap ${
+                          isIncome ? 'text-emerald-400' : 'text-red-400'
                         }`}>
-                          <ChevronRight size={16} />
+                          {isIncome ? '+' : '−'} Rs. {Number(t.amount).toLocaleString('en-LK')}
+                        </span>
+                        <div className="p-1.5 rounded-lg text-slate-500 group-hover:text-slate-300 transition-colors">
+                          <Pencil size={13}/>
                         </div>
                       </div>
-                      <p className={`text-lg font-bold font-mono tracking-tight ${
-                        isIncome ? 'text-emerald-400' : 'text-red-400'
-                      }`}>
-                        {formatCurrency(amount)}
-                      </p>
-                    </motion.div>
+                    </div>
                   );
                 };
+
                 return (
-                  <div className="mb-8">
-                    {incCats.length > 0 && (
-                      <div className="mb-5">
-                        <div className="flex items-center gap-2 mb-3 px-1">
-                          <TrendingUp size={13} className="text-emerald-400" />
-                          <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Income Categories</h3>
-                          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">{incCats.length}</span>
+                  <div className="mb-6">
+                    {/* Stacked Bar Chart */}
+                    {stackData.length > 0 && (
+                      <div className="glass-card p-4 mb-4">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-center">Category Breakdown — tap to filter</p>
+                        <div style={{ height: `${stackData.length * 54 + 16}px` }} className="w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stackData} layout="vertical" margin={{ top: 0, right: 6, left: 72, bottom: 0 }}>
+                              <XAxis type="number" tick={{ fill: '#475569', fontSize: 9, fontFamily: 'monospace' }}
+                                axisLine={false} tickLine={false}
+                                tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                              <YAxis type="category" dataKey="type" width={68}
+                                tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
+                                axisLine={false} tickLine={false} />
+                              <Tooltip
+                                formatter={(value, name) => [formatCurrency(value), name]}
+                                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                              />
+                              {incCats.map((cat, i) => (
+                                <Bar key={`i-${cat.name}`} dataKey={cat.name} stackId="a"
+                                  fill={pmCatFilter === cat.name ? INC_COLORS[i % INC_COLORS.length] : `${INC_COLORS[i % INC_COLORS.length]}bb`}
+                                  stroke={pmCatFilter === cat.name ? '#fff' : 'none'} strokeWidth={pmCatFilter === cat.name ? 1.5 : 0}
+                                  cursor="pointer"
+                                  onClick={() => { setPmCatFilter(pmCatFilter === cat.name ? null : cat.name); setVisibleTxLimit(10); }}
+                                  radius={i === incCats.length - 1 && expCats.length === 0 ? [0,6,6,0] : [0,0,0,0]}
+                                />
+                              ))}
+                              {expCats.map((cat, i) => (
+                                <Bar key={`e-${cat.name}`} dataKey={cat.name} stackId="a"
+                                  fill={pmCatFilter === cat.name ? EXP_COLORS[i % EXP_COLORS.length] : `${EXP_COLORS[i % EXP_COLORS.length]}bb`}
+                                  stroke={pmCatFilter === cat.name ? '#fff' : 'none'} strokeWidth={pmCatFilter === cat.name ? 1.5 : 0}
+                                  cursor="pointer"
+                                  onClick={() => { setPmCatFilter(pmCatFilter === cat.name ? null : cat.name); setVisibleTxLimit(10); }}
+                                  radius={i === expCats.length - 1 ? [0,6,6,0] : [0,0,0,0]}
+                                />
+                              ))}
+                            </BarChart>
+                          </ResponsiveContainer>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {incCats.map(cat => renderCatCard(cat, 'emerald'))}
+                        {/* Clickable Legend Pills */}
+                        <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
+                          {legendItems.map(item => (
+                            <button key={item.name}
+                              onClick={() => { setPmCatFilter(pmCatFilter === item.name ? null : item.name); setVisibleTxLimit(10); }}
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${
+                                pmCatFilter === item.name
+                                  ? 'border-white/30 bg-slate-700 text-white shadow-md scale-105'
+                                  : 'border-slate-700 bg-slate-900/50 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+                              }`}
+                            >
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                              {item.name}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     )}
-                    {expCats.length > 0 && (
-                      <div className="mb-5">
-                        <div className="flex items-center gap-2 mb-3 px-1">
-                          <TrendingDown size={13} className="text-red-400" />
-                          <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest">Expense Categories</h3>
-                          <span className="text-[10px] bg-red-500/10 text-red-400 font-bold px-2 py-0.5 rounded-full border border-red-500/20">{expCats.length}</span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {expCats.map(cat => renderCatCard(cat, 'red'))}
-                        </div>
-                      </div>
-                    )}
-                    {modalData.breakdown.length === 0 && (
-                      <div className="glass-card p-8 text-center">
-                        <p className="text-slate-500 text-sm">No categories yet.</p>
+
+                    {/* Inline Transaction List */}
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        {pmCatFilter ? pmCatFilter : 'All'} Transactions
+                        <span className="ml-1.5 text-slate-500 font-mono">({filteredTx.length})</span>
+                      </h3>
+                      {pmCatFilter && (
+                        <button onClick={() => { setPmCatFilter(null); setVisibleTxLimit(10); }}
+                          className="text-[10px] font-bold bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-700 hover:bg-slate-700 transition-colors flex items-center gap-1"
+                        >
+                          <X size={10}/> Clear
+                        </button>
+                      )}
+                    </div>
+
+                    {filteredTx.length === 0 ? (
+                      <div className="glass-card p-6 text-center text-slate-500 text-sm">No transactions found.</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredTx.slice(0, visibleTxLimit).map(renderTxRow)}
+                        {filteredTx.length > visibleTxLimit && (
+                          <button onClick={() => setVisibleTxLimit(p => p + 10)}
+                            className="w-full mt-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors"
+                          >
+                            See More ({filteredTx.length - visibleTxLimit} left)
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1169,90 +1274,97 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                     </div>
                   </div>
 
-                  {/* Split by Income / Expense category type */}
+                  {/* ── Stacked Bar Chart (Net Balance Modal Screen 1) ── */}
                   {(() => {
-                    const incCats = allCategoriesBreakdown.filter(c => {
-                      const found = categories.find(cat => cat.name === c.name);
-                      return found ? found.type === 'Income' : c.income > 0;
-                    });
-                    const expCats = allCategoriesBreakdown.filter(c => {
-                      const found = categories.find(cat => cat.name === c.name);
-                      return found ? found.type === 'Expense' : c.expense > 0;
-                    });
-                    const renderNetCatCard = (cat, isIncome) => (
-                      <motion.div
-                        key={cat.id || cat.name}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          setSelectedNetCategory(cat.name);
-                          setSelectedNetSubFilter(null);
-                          setVisibleTxLimit(10);
-                        }}
-                        className={`glass-card p-4 border cursor-pointer transition-all shadow-lg group relative overflow-hidden text-left ${
-                          isIncome
-                            ? 'border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/5'
-                            : 'border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="min-w-0 pr-2">
-                            <p className={`text-base font-bold text-white truncate transition-colors ${
-                              isIncome ? 'group-hover:text-emerald-400' : 'group-hover:text-red-400'
-                            }`}>
-                              {cat.name}
-                            </p>
-                            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                              {cat.count} {cat.count === 1 ? 'transaction' : 'transactions'}
-                            </p>
-                          </div>
-                          <div className={`w-7 h-7 rounded-lg bg-slate-800/60 flex items-center justify-center text-slate-400 transition-colors shrink-0 ${
-                            isIncome ? 'group-hover:text-emerald-400 group-hover:bg-emerald-500/10' : 'group-hover:text-red-400 group-hover:bg-red-500/10'
-                          }`}>
-                            <ChevronRight size={16} />
-                          </div>
-                        </div>
-                        <p className={`text-lg font-bold font-mono tracking-tight ${
-                          isIncome ? 'text-emerald-400' : 'text-red-400'
-                        }`}>
-                          {formatCurrency(isIncome ? cat.income : cat.expense)}
-                        </p>
-                      </motion.div>
-                    );
+                    const INC_COLORS = ['#10b981','#34d399','#6ee7b7','#059669','#14b8a6','#0f766e'];
+                    const EXP_COLORS = ['#ef4444','#f97316','#f59e0b','#a855f7','#ec4899','#06b6d4','#fb923c','#8b5cf6'];
+
+                    const incCats = allCategoriesBreakdown
+                      .filter(c => { const f = categories.find(x => x.name === c.name); return f ? f.type === 'Income' : c.income > 0; })
+                      .filter(c => c.income > 0);
+                    const expCats = allCategoriesBreakdown
+                      .filter(c => { const f = categories.find(x => x.name === c.name); return f ? f.type === 'Expense' : c.expense > 0; })
+                      .filter(c => c.expense > 0);
+
+                    const incEntry = { type: '↑ Income' };
+                    incCats.forEach(c => { incEntry[c.name] = c.income; });
+                    const expEntry = { type: '↓ Expenses' };
+                    expCats.forEach(c => { expEntry[c.name] = c.expense; });
+                    const stackData = [
+                      ...(totalIncome > 0 ? [incEntry] : []),
+                      ...(totalExpense > 0 ? [expEntry] : []),
+                    ];
+
+                    const legendItems = [
+                      ...incCats.map((c, i) => ({ name: c.name, color: INC_COLORS[i % INC_COLORS.length], isIncome: true })),
+                      ...expCats.map((c, i) => ({ name: c.name, color: EXP_COLORS[i % EXP_COLORS.length], isIncome: false })),
+                    ];
+
+                    const goTo = (name) => { setSelectedNetCategory(name); setSelectedNetSubFilter(null); setVisibleTxLimit(10); };
+
                     return (
-                      <div className="mb-8">
-                        {incCats.length > 0 && (
-                          <div className="mb-5">
-                            <div className="flex items-center gap-2 mb-3 px-1">
-                              <TrendingUp size={13} className="text-emerald-400" />
-                              <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Income Categories</h3>
-                              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">{incCats.length}</span>
+                      <div className="mb-6">
+                        {stackData.length > 0 ? (
+                          <div className="glass-card p-4 mb-4">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-center">Category Breakdown — tap to drill down</p>
+                            <div style={{ height: `${stackData.length * 54 + 16}px` }} className="w-full">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={stackData} layout="vertical" margin={{ top: 0, right: 6, left: 72, bottom: 0 }}>
+                                  <XAxis type="number" tick={{ fill: '#475569', fontSize: 9, fontFamily: 'monospace' }}
+                                    axisLine={false} tickLine={false}
+                                    tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                                  <YAxis type="category" dataKey="type" width={68}
+                                    tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
+                                    axisLine={false} tickLine={false} />
+                                  <Tooltip
+                                    formatter={(value, name) => [formatCurrency(value), name]}
+                                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                                  />
+                                  {incCats.map((cat, i) => (
+                                    <Bar key={`ni-${cat.name}`} dataKey={cat.name} stackId="a"
+                                      fill={`${INC_COLORS[i % INC_COLORS.length]}cc`}
+                                      cursor="pointer"
+                                      onClick={() => goTo(cat.name)}
+                                      radius={i === incCats.length - 1 && expCats.length === 0 ? [0,6,6,0] : [0,0,0,0]}
+                                    />
+                                  ))}
+                                  {expCats.map((cat, i) => (
+                                    <Bar key={`ne-${cat.name}`} dataKey={cat.name} stackId="a"
+                                      fill={`${EXP_COLORS[i % EXP_COLORS.length]}cc`}
+                                      cursor="pointer"
+                                      onClick={() => goTo(cat.name)}
+                                      radius={i === expCats.length - 1 ? [0,6,6,0] : [0,0,0,0]}
+                                    />
+                                  ))}
+                                </BarChart>
+                              </ResponsiveContainer>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {incCats.map(cat => renderNetCatCard(cat, true))}
+                            {/* Clickable Legend Pills */}
+                            <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
+                              {legendItems.map(item => (
+                                <button key={item.name}
+                                  onClick={() => goTo(item.name)}
+                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-slate-700 bg-slate-900/50 text-slate-300 hover:text-white hover:border-slate-500 transition-all"
+                                >
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                                  {item.name}
+                                  <ChevronRight size={10} className="text-slate-500" />
+                                </button>
+                              ))}
                             </div>
                           </div>
-                        )}
-                        {expCats.length > 0 && (
-                          <div className="mb-5">
-                            <div className="flex items-center gap-2 mb-3 px-1">
-                              <TrendingDown size={13} className="text-red-400" />
-                              <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest">Expense Categories</h3>
-                              <span className="text-[10px] bg-red-500/10 text-red-400 font-bold px-2 py-0.5 rounded-full border border-red-500/20">{expCats.length}</span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {expCats.map(cat => renderNetCatCard(cat, false))}
-                            </div>
+                        ) : (
+                          <div className="glass-card p-8 text-center">
+                            <p className="text-slate-400 text-sm mb-1">No transactions this month.</p>
                           </div>
                         )}
                         {allCategoriesBreakdown.length === 0 && (
-                          <div className="glass-card p-8 text-center">
-                            <p className="text-slate-400 text-sm mb-1">No categories added yet.</p>
-                            <button
-                              onClick={() => setManagingCategory({ id: null, name: "", incomeTypes: [], expenseTypes: [] })}
-                              className="mt-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 underline"
-                            >
-                              Click here to create a category
+                          <div className="glass-card p-6 text-center">
+                            <p className="text-slate-400 text-sm mb-2">No categories added yet.</p>
+                            <button onClick={() => setManagingCategory({ id: null, name: "", incomeTypes: [], expenseTypes: [] })}
+                              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 underline">
+                              Create a category
                             </button>
                           </div>
                         )}
