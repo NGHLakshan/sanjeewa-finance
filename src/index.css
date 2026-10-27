@@ -104,6 +104,13 @@
     scrollbar-width: none;
   }
 
+  .pt-safe {
+    padding-top: max(16px, env(safe-area-inset-top, 16px));
+  }
+  .pb-safe {
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  }
+
   /* Force hide Netlify badges and deploy preview drawers */
   #netlify-badge,
   #netlify-drawer,

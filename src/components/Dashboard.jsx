@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { subscribeToTransactions } from "../services/transactions";
 import { subscribeToCategories, addCategory, updateCategory, deleteCategory } from "../services/categories";
 import { TrendingUp, TrendingDown, Wallet, Calendar, Filter, PlusCircle, Building2, X, Settings2, Check, Trash2, ChevronRight, ArrowLeft, Layers, Pencil, Clock, CreditCard, Banknote } from "lucide-react";
@@ -7,7 +8,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, Bar
 import CategoryManagerModal from "./CategoryManagerModal";
 import EditTransactionModal from "./EditTransactionModal";
 import { registerModal } from "../utils/modalHistory";
-import { useRef } from "react";
 
 const ScrollResetContainer = ({ children, className }) => {
   const ref = useRef(null);
@@ -897,16 +897,16 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
 
       {/* Drill-Down Modal */}
       <AnimatePresence>
-        {selectedMethod && modalData && (
+        {selectedMethod && modalData && createPortal(
           <motion.div
             initial={{ opacity: 0, y: "100%" }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-50 bg-slate-950 flex flex-col"
+            className="fixed inset-0 z-[100] bg-slate-950 flex flex-col"
           >
             {/* Header — always at top (no sticky needed outside scroll container) */}
-            <div className="shrink-0 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/60 px-4 pt-[72px] pb-4">
+            <div className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/60 px-4 pt-safe pb-4">
               <div className="max-w-lg mx-auto flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   {selectedMethod === "Cash" ? (
@@ -1175,22 +1175,23 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               })()}
             </div>
             </ScrollResetContainer>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
 
       {/* ── Net Balance & Category Breakdown Modal (Cash + Bank Combined) ── */}
       <AnimatePresence>
-        {showNetCategoryModal && (
+        {showNetCategoryModal && createPortal(
           <motion.div
             initial={{ opacity: 0, y: "100%" }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-50 bg-slate-950 flex flex-col"
+            className="fixed inset-0 z-[100] bg-slate-950 flex flex-col"
           >
             {/* Header — always at top */}
-            <div className="shrink-0 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/60 px-4 pt-[72px] pb-4">
+            <div className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/60 px-4 pt-safe pb-4">
               <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   {selectedNetCategory ? (
@@ -1732,22 +1733,23 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               )}
             </div>
             </ScrollResetContainer>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
 
       {/* Category Detail View Modal */}
       <AnimatePresence>
-        {viewingCategory && categoryDetailsData && (
+        {viewingCategory && categoryDetailsData && createPortal(
           <motion.div
             initial={{ opacity: 0, y: "100%" }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[60] bg-slate-950 flex flex-col"
+            className="fixed inset-0 z-[110] bg-slate-950 flex flex-col"
           >
             {/* Header — always at top */}
-            <div className="shrink-0 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/60 px-4 pt-[72px] pb-4">
+            <div className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/60 px-4 pt-safe pb-4">
               <div className="max-w-lg mx-auto flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2 truncate">
                   <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
@@ -1976,7 +1978,8 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               })()}
             </div>
             </ScrollResetContainer>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
 

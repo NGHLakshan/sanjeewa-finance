@@ -297,7 +297,7 @@ export default function App({ onReady }) {
       <OfflineBanner />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative z-10">
+      <main className="flex-1 overflow-hidden relative">
         <div className="h-full w-full overflow-y-auto pb-24" id="main-scroller">
           {tab === "form" ? (
             <TransactionForm onDirtyChange={setIsFormDirty} />
