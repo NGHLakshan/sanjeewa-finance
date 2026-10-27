@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    /* Prevent tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-slate-950 text-white antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+    /* Prevent accidental text selection on tap (mobile) */
+    user-select: none;
+    -webkit-user-select: none;
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.05), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.05), transparent 25%);
+    background-attachment: fixed;
+  }
+
+  /* Re-enable text selection for inputs so users can edit/copy their data */
+  input, textarea, select, [contenteditable] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  /* Date input styling for dark backgrounds */
+  input[type='date']::-webkit-calendar-picker-indicator {
+    filter: invert(0.6);
+    cursor: pointer;
+  }
+
+  /* Remove number input arrows */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  select option {
+    background-color: #1e293b;
+    color: white;
+  }
+}
+
+@layer components {
+  .form-label {
+    @apply block text-sm font-medium text-slate-300 mb-1.5;
+  }
+
+  .form-input {
+    @apply w-full bg-slate-900/50 border border-slate-800 text-white rounded-2xl px-4 py-3 text-sm
+           focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500
+           transition-all duration-300 placeholder-slate-500 backdrop-blur-md shadow-inner;
+  }
+
+  .form-group {
+    @apply flex flex-col;
+  }
+
+  .glass-card {
+    @apply bg-slate-900/40 border border-slate-800/60 rounded-2xl backdrop-blur-xl shadow-lg;
+  }
+  
+  .glass-panel {
+    @apply bg-slate-900/60 border border-slate-800 backdrop-blur-2xl;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r;
+  }
+}
+
+@layer utilities {
+  .glow-emerald {
+    box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.4);
+  }
+  .glow-sky {
+    box-shadow: 0 0 20px -5px rgba(56, 189, 248, 0.4);
+  }
+  .glow-red {
+    box-shadow: 0 0 20px -5px rgba(239, 68, 68, 0.4);
+  }
+
+  /* Hide scrollbar across all browsers */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Force hide Netlify badges and deploy preview drawers */
+  #netlify-badge,
+  #netlify-drawer,
+  netlify-drawer,
+  .netlify-badge {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
