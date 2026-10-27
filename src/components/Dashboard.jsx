@@ -984,67 +984,90 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               )}
 
 
-              {/* Category Section Header */}
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Categories</h3>
-
-
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                {modalData.breakdown.map(cat => {
-                  const net = cat.income - cat.expense;
+              {/* ── Income Categories ── */}
+              {(() => {
+                const incCats = modalData.breakdown.filter(c => {
+                  const found = categories.find(cat => cat.name === c.name);
+                  return found ? found.type === 'Income' : c.income > 0;
+                });
+                const expCats = modalData.breakdown.filter(c => {
+                  const found = categories.find(cat => cat.name === c.name);
+                  return found ? found.type === 'Expense' : c.expense > 0;
+                });
+                const renderCatCard = (cat, accentColor) => {
+                  const isIncome = accentColor === 'emerald';
+                  const amount = isIncome ? cat.income : cat.expense;
                   return (
                     <motion.div
                       key={cat.id || cat.name}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => { setViewingCategory(cat.name); setVisibleTxLimit(10); }}
-                      className="glass-card p-4 border border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-all hover:bg-slate-900/60 shadow-lg group relative overflow-hidden text-left"
+                      className={`glass-card p-4 border cursor-pointer transition-all shadow-lg group relative overflow-hidden text-left ${
+                        isIncome
+                          ? 'border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                          : 'border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5'
+                      }`}
                     >
-                      <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start justify-between mb-2">
                         <div className="min-w-0 pr-2">
-                          <p className="text-base font-bold text-white truncate group-hover:text-emerald-400 transition-colors">
+                          <p className={`text-base font-bold text-white truncate transition-colors ${
+                            isIncome ? 'group-hover:text-emerald-400' : 'group-hover:text-red-400'
+                          }`}>
                             {cat.name}
                           </p>
                           <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                             {cat.count} {cat.count === 1 ? 'transaction' : 'transactions'}
                           </p>
                         </div>
-                        <div className="w-7 h-7 rounded-lg bg-slate-800/60 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-500/10 transition-colors shrink-0">
+                        <div className={`w-7 h-7 rounded-lg bg-slate-800/60 flex items-center justify-center text-slate-400 transition-colors shrink-0 ${
+                          isIncome ? 'group-hover:text-emerald-400 group-hover:bg-emerald-500/10' : 'group-hover:text-red-400 group-hover:bg-red-500/10'
+                        }`}>
                           <ChevronRight size={16} />
                         </div>
                       </div>
-
-                      {/* Net Balance row */}
-                      <div className="mb-3">
-                        <p className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold mb-0.5">Net</p>
-                        <p className={`text-lg font-bold font-mono tracking-tight ${
-                          net > 0 ? "text-emerald-400" : net < 0 ? "text-red-400" : "text-slate-400"
-                        }`}>
-                          {net !== 0 ? (net < 0 ? "−" : "+") : ""}{formatCurrency(Math.abs(net))}
-                        </p>
-                      </div>
-
-                      {/* Income & Expense sub-row */}
-                      <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-800/60 text-[11px]">
-                        <div className="flex items-center gap-1 text-emerald-400 font-medium font-mono truncate">
-                          <span className="text-[10px] text-emerald-500/70 uppercase">In:</span>
-                          <span className="truncate">{formatCurrency(cat.income).replace("Rs. ", "")}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-red-400 font-medium font-mono truncate justify-end">
-                          <span className="text-[10px] text-red-500/70 uppercase">Out:</span>
-                          <span className="truncate">{formatCurrency(cat.expense).replace("Rs. ", "")}</span>
-                        </div>
-                      </div>
+                      <p className={`text-lg font-bold font-mono tracking-tight ${
+                        isIncome ? 'text-emerald-400' : 'text-red-400'
+                      }`}>
+                        {formatCurrency(amount)}
+                      </p>
                     </motion.div>
                   );
-                })}
-                {modalData.breakdown.length === 0 && (
-                  <div className="glass-card p-8 text-center">
-                    <p className="text-slate-500 text-sm">No categories yet.</p>
-                    <p className="text-slate-600 text-xs mt-1">Tap "Add Category" above to create one.</p>
+                };
+                return (
+                  <div className="mb-8">
+                    {incCats.length > 0 && (
+                      <div className="mb-5">
+                        <div className="flex items-center gap-2 mb-3 px-1">
+                          <TrendingUp size={13} className="text-emerald-400" />
+                          <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Income Categories</h3>
+                          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">{incCats.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {incCats.map(cat => renderCatCard(cat, 'emerald'))}
+                        </div>
+                      </div>
+                    )}
+                    {expCats.length > 0 && (
+                      <div className="mb-5">
+                        <div className="flex items-center gap-2 mb-3 px-1">
+                          <TrendingDown size={13} className="text-red-400" />
+                          <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest">Expense Categories</h3>
+                          <span className="text-[10px] bg-red-500/10 text-red-400 font-bold px-2 py-0.5 rounded-full border border-red-500/20">{expCats.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {expCats.map(cat => renderCatCard(cat, 'red'))}
+                        </div>
+                      </div>
+                    )}
+                    {modalData.breakdown.length === 0 && (
+                      <div className="glass-card p-8 text-center">
+                        <p className="text-slate-500 text-sm">No categories yet.</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
             </ScrollResetContainer>
           </motion.div>
@@ -1146,81 +1169,96 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                     </div>
                   </div>
 
-                  {/* Section Title */}
-                  <div className="flex items-center gap-2 mb-3 px-1">
-                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Categories</h3>
-                    <span className="text-[10px] bg-slate-800 text-slate-400 font-bold px-2 py-0.5 rounded-full border border-slate-700">
-                      {allCategoriesBreakdown.length}
-                    </span>
-                  </div>
-
-                  {/* Boxes / Cards Grid of All Added Categories */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                    {allCategoriesBreakdown.map((cat) => {
-                      const net = cat.income - cat.expense;
-                      return (
-                        <motion.div
-                          key={cat.id || cat.name}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            setSelectedNetCategory(cat.name);
-                            setSelectedNetSubFilter(null);
-                            setVisibleTxLimit(10);
-                          }}
-                          className="glass-card p-4 border border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition-all hover:bg-slate-900/60 shadow-lg group relative overflow-hidden text-left"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="min-w-0 pr-2">
-                              <p className="text-base font-bold text-white truncate group-hover:text-emerald-400 transition-colors">
-                                {cat.name}
-                              </p>
-                              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                                {cat.count} {cat.count === 1 ? 'transaction' : 'transactions'}
-                              </p>
-                            </div>
-                            <div className="w-7 h-7 rounded-lg bg-slate-800/60 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-500/10 transition-colors shrink-0">
-                              <ChevronRight size={16} />
-                            </div>
-                          </div>
-
-                          {/* Net Balance row */}
-                          <div className="mb-3">
-                            <p className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold mb-0.5">Net</p>
-                            <p className={`text-lg font-bold font-mono tracking-tight ${
-                              net > 0 ? "text-emerald-400" : net < 0 ? "text-red-400" : "text-slate-400"
+                  {/* Split by Income / Expense category type */}
+                  {(() => {
+                    const incCats = allCategoriesBreakdown.filter(c => {
+                      const found = categories.find(cat => cat.name === c.name);
+                      return found ? found.type === 'Income' : c.income > 0;
+                    });
+                    const expCats = allCategoriesBreakdown.filter(c => {
+                      const found = categories.find(cat => cat.name === c.name);
+                      return found ? found.type === 'Expense' : c.expense > 0;
+                    });
+                    const renderNetCatCard = (cat, isIncome) => (
+                      <motion.div
+                        key={cat.id || cat.name}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setSelectedNetCategory(cat.name);
+                          setSelectedNetSubFilter(null);
+                          setVisibleTxLimit(10);
+                        }}
+                        className={`glass-card p-4 border cursor-pointer transition-all shadow-lg group relative overflow-hidden text-left ${
+                          isIncome
+                            ? 'border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                            : 'border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="min-w-0 pr-2">
+                            <p className={`text-base font-bold text-white truncate transition-colors ${
+                              isIncome ? 'group-hover:text-emerald-400' : 'group-hover:text-red-400'
                             }`}>
-                              {net !== 0 ? (net < 0 ? "−" : "+") : ""}{formatCurrency(Math.abs(net))}
+                              {cat.name}
+                            </p>
+                            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                              {cat.count} {cat.count === 1 ? 'transaction' : 'transactions'}
                             </p>
                           </div>
-
-                          {/* Income & Expense sub-row */}
-                          <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-800/60 text-[11px]">
-                            <div className="flex items-center gap-1 text-emerald-400 font-medium font-mono truncate">
-                              <span className="text-[10px] text-emerald-500/70 uppercase">In:</span>
-                              <span className="truncate">{formatCurrency(cat.income).replace("Rs. ", "")}</span>
+                          <div className={`w-7 h-7 rounded-lg bg-slate-800/60 flex items-center justify-center text-slate-400 transition-colors shrink-0 ${
+                            isIncome ? 'group-hover:text-emerald-400 group-hover:bg-emerald-500/10' : 'group-hover:text-red-400 group-hover:bg-red-500/10'
+                          }`}>
+                            <ChevronRight size={16} />
+                          </div>
+                        </div>
+                        <p className={`text-lg font-bold font-mono tracking-tight ${
+                          isIncome ? 'text-emerald-400' : 'text-red-400'
+                        }`}>
+                          {formatCurrency(isIncome ? cat.income : cat.expense)}
+                        </p>
+                      </motion.div>
+                    );
+                    return (
+                      <div className="mb-8">
+                        {incCats.length > 0 && (
+                          <div className="mb-5">
+                            <div className="flex items-center gap-2 mb-3 px-1">
+                              <TrendingUp size={13} className="text-emerald-400" />
+                              <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Income Categories</h3>
+                              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/20">{incCats.length}</span>
                             </div>
-                            <div className="flex items-center gap-1 text-red-400 font-medium font-mono truncate justify-end">
-                              <span className="text-[10px] text-red-500/70 uppercase">Out:</span>
-                              <span className="truncate">{formatCurrency(cat.expense).replace("Rs. ", "")}</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {incCats.map(cat => renderNetCatCard(cat, true))}
                             </div>
                           </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-
-                  {allCategoriesBreakdown.length === 0 && (
-                    <div className="glass-card p-8 text-center">
-                      <p className="text-slate-400 text-sm mb-1">No categories added yet.</p>
-                      <button
-                        onClick={() => setManagingCategory({ id: null, name: "", incomeTypes: [], expenseTypes: [] })}
-                        className="mt-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 underline"
-                      >
-                        Click here to create a category
-                      </button>
-                    </div>
-                  )}
+                        )}
+                        {expCats.length > 0 && (
+                          <div className="mb-5">
+                            <div className="flex items-center gap-2 mb-3 px-1">
+                              <TrendingDown size={13} className="text-red-400" />
+                              <h3 className="text-xs font-bold text-red-400 uppercase tracking-widest">Expense Categories</h3>
+                              <span className="text-[10px] bg-red-500/10 text-red-400 font-bold px-2 py-0.5 rounded-full border border-red-500/20">{expCats.length}</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {expCats.map(cat => renderNetCatCard(cat, false))}
+                            </div>
+                          </div>
+                        )}
+                        {allCategoriesBreakdown.length === 0 && (
+                          <div className="glass-card p-8 text-center">
+                            <p className="text-slate-400 text-sm mb-1">No categories added yet.</p>
+                            <button
+                              onClick={() => setManagingCategory({ id: null, name: "", incomeTypes: [], expenseTypes: [] })}
+                              className="mt-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 underline"
+                            >
+                              Click here to create a category
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 /* ── SCREEN 2: SELECTED CATEGORY DETAILED VIEW ── */
