@@ -869,50 +869,6 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
           </div>
 
-          {/* 4-method 3D breakdown strip */}
-          <div className="grid grid-cols-2 gap-2">
-            {/* Cash */}
-            <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
-              <span className="text-base leading-none drop-shadow">💵</span>
-              <div className="min-w-0">
-                <p className="text-white/70 text-[9px] uppercase tracking-wider font-bold">Cash</p>
-                <p className={`text-xs font-bold font-mono leading-tight ${cashBalance < 0 ? "text-red-300" : "text-white"}`}>
-                  {cashBalance < 0 ? "−" : ""}{formatCurrency(Math.abs(cashBalance))}
-                </p>
-              </div>
-            </div>
-            {/* Bank */}
-            <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
-              <span className="text-base leading-none drop-shadow">🏦</span>
-              <div className="min-w-0">
-                <p className="text-white/70 text-[9px] uppercase tracking-wider font-bold">Bank</p>
-                <p className={`text-xs font-bold font-mono leading-tight ${bankBalance < 0 ? "text-red-300" : "text-white"}`}>
-                  {bankBalance < 0 ? "−" : ""}{formatCurrency(Math.abs(bankBalance))}
-                </p>
-              </div>
-            </div>
-            {/* Credit Card */}
-            <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
-              <span className="text-base leading-none drop-shadow">💳</span>
-              <div className="min-w-0">
-                <p className="text-white/70 text-[9px] uppercase tracking-wider font-bold">Credit</p>
-                <p className={`text-xs font-bold font-mono leading-tight ${creditCardSpent > 0 ? "text-purple-300" : "text-white"}`}>
-                  {creditCardSpent > 0 ? "−" : ""}{formatCurrency(creditCardSpent)}
-                </p>
-              </div>
-            </div>
-            {/* Debit Card */}
-            <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
-              <span className="text-base leading-none drop-shadow">💳</span>
-              <div className="min-w-0">
-                <p className="text-white/70 text-[9px] uppercase tracking-wider font-bold">Debit</p>
-                <p className={`text-xs font-bold font-mono leading-tight ${debitCardSpent > 0 ? "text-amber-300" : "text-white"}`}>
-                  {debitCardSpent > 0 ? "−" : ""}{formatCurrency(debitCardSpent)}
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Categories button */}
           <div className="flex justify-end pt-1">
             <div className="flex items-center gap-1.5 text-xs font-bold text-white bg-black/35 hover:bg-black/50 px-3.5 py-1.5 rounded-xl backdrop-blur-md border border-white/15 shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all">
