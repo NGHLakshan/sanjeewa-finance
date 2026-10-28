@@ -380,6 +380,74 @@ export default function SummaryView({ transactions }) {
                 </div>
               </div>
 
+              {/* Category Pills (Category names only: Income & Expense) */}
+              {catBreakdown.length > 0 && (
+                <div className="glass-card p-4 mb-5">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <Layers size={13} className="text-emerald-400" />
+                      Categories ({catBreakdown.length})
+                    </p>
+                  </div>
+                  
+                  {/* Income Categories */}
+                  {catBreakdown.some(c => c.income > 0) && (
+                    <div className="mb-3.5">
+                      <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        Income Categories
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {catBreakdown.filter(c => c.income > 0).map((cat, i) => {
+                          const colors = ['#10b981', '#34d399', '#059669', '#14b8a6', '#06b6d4', '#0ea5e9'];
+                          const color = colors[i % colors.length];
+                          return (
+                            <div
+                              key={cat.name}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 border border-slate-700/80 text-white shadow-sm"
+                            >
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              <span>{cat.name}</span>
+                              <span className="text-[10px] text-emerald-400 font-mono ml-1 font-bold">
+                                Rs. {Number(cat.income).toLocaleString("en-LK")}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Expense Categories */}
+                  {catBreakdown.some(c => c.expense > 0) && (
+                    <div>
+                      <p className="text-[9px] font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                        Expense Categories
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {catBreakdown.filter(c => c.expense > 0).map((cat, i) => {
+                          const colors = ['#ef4444', '#f97316', '#f59e0b', '#a855f7', '#ec4899', '#f43f5e'];
+                          const color = colors[i % colors.length];
+                          return (
+                            <div
+                              key={cat.name}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 border border-slate-700/80 text-white shadow-sm"
+                            >
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              <span>{cat.name}</span>
+                              <span className="text-[10px] text-red-400 font-mono ml-1 font-bold">
+                                Rs. {Number(cat.expense).toLocaleString("en-LK")}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
             </>
           )}
         </motion.div>

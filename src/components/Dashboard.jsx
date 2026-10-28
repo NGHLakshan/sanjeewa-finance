@@ -98,7 +98,7 @@ const renderPaymentBadge = (method) => {
 // Groups a sorted array of transactions by calendar date and renders them with
 // a date-header row (e.g. "Wednesday • 15 Oct") + daily net, limited to `limit`
 // items, with a "See More" button that calls `onMore` to load the next 10.
-const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No transactions found." }) => {
+const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No transactions found.", nextLabel = "Next" }) => {
   if (txList.length === 0) {
     return (
       <div className="glass-card p-6 text-center text-slate-500 text-sm">{emptyLabel}</div>
@@ -190,9 +190,9 @@ const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No tra
         );
       })}
       {txList.length > limit && (
-        <button onClick={onMore} className="w-full mt-1 py-3 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors flex items-center justify-center gap-2">
-          <span>See More</span>
-          <span className="text-slate-500 font-mono">({txList.length - limit} left)</span>
+        <button onClick={onMore} className="w-full mt-2 py-3 rounded-xl border border-slate-700/80 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm hover:border-slate-500 cursor-pointer">
+          <span>{nextLabel}</span>
+          <span className="text-slate-400 font-mono">({txList.length - limit} more)</span>
         </button>
       )}
     </div>
@@ -234,6 +234,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
   const [selectedNetSubFilter, setSelectedNetSubFilter] = useState(null);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [visibleTxLimit, setVisibleTxLimit] = useState(10);
+  const [netModalTxLimit, setNetModalTxLimit] = useState(10);
   const [pmCatFilter, setPmCatFilter] = useState(null);
 
   // No scroll refs needed — each modal uses a separate inner overflow-y-auto div
@@ -502,6 +503,18 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
   const monthTransactions = useMemo(() => {
     return transactions.filter((t) => toMonthKey(t.date) === selectedMonth);
   }, [transactions, selectedMonth]);
+
+  // All transactions for the selected month sorted by Date and Time descending (latest first)
+  const sortedMonthTransactions = useMemo(() => {
+    return [...monthTransactions].sort((a, b) => {
+      const pad = (n) => String(n).padStart(2, '0');
+      const da = a.date instanceof Date ? a.date : new Date(a.date);
+      const db = b.date instanceof Date ? b.date : new Date(b.date);
+      const strA = `${da.getFullYear()}-${pad(da.getMonth() + 1)}-${pad(da.getDate())}T${a.time || '00:00'}`;
+      const strB = `${db.getFullYear()}-${pad(db.getMonth() + 1)}-${pad(db.getDate())}T${b.time || '00:00'}`;
+      return new Date(strB) - new Date(strA);
+    });
+  }, [monthTransactions]);
 
   // Combined Cash + Bank + Cards category breakdown for all added categories
   const allCategoriesBreakdown = useMemo(() => {
@@ -1467,7 +1480,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                     </div>
                   </div>
 
-                  {/* ── Stacked Bar Chart (Net Balance Modal Screen 1) ── */}
+                  {/* ── Income & Expense Breakdown Chart + All Transactions List ── */}
                   {(() => {
                     const INC_COLORS = ['#10b981','#34d399','#6ee7b7','#059669','#14b8a6','#0f766e'];
                     const EXP_COLORS = ['#ef4444','#f97316','#f59e0b','#a855f7','#ec4899','#06b6d4','#fb923c','#8b5cf6'];
@@ -1488,18 +1501,11 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                       ...(totalExpense > 0 ? [expEntry] : []),
                     ];
 
-                    const legendItems = [
-                      ...incCats.map((c, i) => ({ name: c.name, color: INC_COLORS[i % INC_COLORS.length], isIncome: true })),
-                      ...expCats.map((c, i) => ({ name: c.name, color: EXP_COLORS[i % EXP_COLORS.length], isIncome: false })),
-                    ];
-
-                    const goTo = (name) => { setSelectedNetCategory(name); setSelectedNetSubFilter(null); setVisibleTxLimit(10); };
-
                     return (
                       <div className="mb-6">
-                        {stackData.length > 0 ? (
-                          <div className="glass-card p-4 mb-4">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-center">Category Breakdown — tap to drill down</p>
+                        {stackData.length > 0 && (
+                          <div className="glass-card p-4 mb-5">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-center">Income &amp; Expense Breakdown</p>
                             <div style={{ height: `${stackData.length * 54 + 16}px` }} className="w-full">
                               <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={stackData} layout="vertical" margin={{ top: 0, right: 6, left: 72, bottom: 0 }}>
@@ -1517,50 +1523,38 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                                   {incCats.map((cat, i) => (
                                     <Bar key={`ni-${cat.name}`} dataKey={cat.name} stackId="a"
                                       fill={`${INC_COLORS[i % INC_COLORS.length]}cc`}
-                                      cursor="pointer"
-                                      onClick={() => goTo(cat.name)}
                                       radius={i === incCats.length - 1 && expCats.length === 0 ? [0,6,6,0] : [0,0,0,0]}
                                     />
                                   ))}
                                   {expCats.map((cat, i) => (
                                     <Bar key={`ne-${cat.name}`} dataKey={cat.name} stackId="a"
                                       fill={`${EXP_COLORS[i % EXP_COLORS.length]}cc`}
-                                      cursor="pointer"
-                                      onClick={() => goTo(cat.name)}
                                       radius={i === expCats.length - 1 ? [0,6,6,0] : [0,0,0,0]}
                                     />
                                   ))}
                                 </BarChart>
                               </ResponsiveContainer>
                             </div>
-                            {/* Clickable Legend Pills */}
-                            <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
-                              {legendItems.map(item => (
-                                <button key={item.name}
-                                  onClick={() => goTo(item.name)}
-                                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-slate-700 bg-slate-900/50 text-slate-300 hover:text-white hover:border-slate-500 transition-all"
-                                >
-                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                                  {item.name}
-                                  <ChevronRight size={10} className="text-slate-500" />
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="glass-card p-8 text-center">
-                            <p className="text-slate-400 text-sm mb-1">No transactions this month.</p>
                           </div>
                         )}
-                        {allCategoriesBreakdown.length === 0 && (
-                          <div className="glass-card p-6 text-center">
-                            <p className="text-slate-400 text-sm mb-2">No categories added yet.</p>
-                            <button onClick={() => setManagingCategory({ id: null, name: "", incomeTypes: [], expenseTypes: [] })}
-                              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 underline">
-                              Create a category
-                            </button>
+
+                        {/* ── ALL TRANSACTIONS (Date & Time grouped, 10 per page, Next button) ── */}
+                        <div className="mt-5">
+                          <div className="flex items-center justify-between mb-3 px-1">
+                            <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
+                              <span>All Transactions</span>
+                              <span className="text-slate-500 font-mono">({sortedMonthTransactions.length})</span>
+                            </h3>
                           </div>
-                        )}
+                          <DateGroupedTxList
+                            txList={sortedMonthTransactions}
+                            limit={netModalTxLimit}
+                            onMore={() => setNetModalTxLimit(p => p + 10)}
+                            onEdit={(t) => setEditingTransaction(t)}
+                            nextLabel="Next"
+                            emptyLabel="No transactions found this month."
+                          />
+                        </div>
                       </div>
                     );
                   })()}
