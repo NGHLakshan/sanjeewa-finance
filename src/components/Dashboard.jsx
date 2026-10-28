@@ -94,6 +94,110 @@ const renderPaymentBadge = (method) => {
   return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-sky-500/15 text-sky-400 border-sky-500/30 shrink-0">🏦 Bank</span>;
 };
 
+// ── Date-grouped transaction list renderer ────────────────────────────────────
+// Groups a sorted array of transactions by calendar date and renders them with
+// a date-header row (e.g. "Wednesday • 15 Oct") + daily net, limited to `limit`
+// items, with a "See More" button that calls `onMore` to load the next 10.
+const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No transactions found." }) => {
+  if (txList.length === 0) {
+    return (
+      <div className="glass-card p-6 text-center text-slate-500 text-sm">{emptyLabel}</div>
+    );
+  }
+
+  // Only render up to `limit` items
+  const visible = txList.slice(0, limit);
+
+  // Bucket visible txns by ISO date key, preserving newest-first order
+  const buckets = {};
+  const order = [];
+  visible.forEach((t) => {
+    const d = t.date instanceof Date ? t.date : new Date(t.date);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if (!buckets[key]) {
+      buckets[key] = { date: d, txns: [] };
+      order.push(key);
+    }
+    buckets[key].txns.push(t);
+  });
+
+  const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+  return (
+    <div className="space-y-4">
+      {order.map((key) => {
+        const { date, txns } = buckets[key];
+        const dayName = DAY_NAMES[date.getDay()];
+        const dateLabel = date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+        const dayNet = txns.reduce((s, t) => s + (t.type === "Income" ? Number(t.amount) : -Number(t.amount)), 0);
+        return (
+          <div key={key}>
+            {/* Date header row */}
+            <div className="flex items-center justify-between mb-2 px-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">{dayName}</span>
+                <span className="text-[10px] text-slate-500 font-medium">&bull; {dateLabel}</span>
+              </div>
+              <span className={`text-[10px] font-bold font-mono ${dayNet >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {dayNet >= 0 ? "+" : "&#8722;"} Rs.&amp;nbsp;{Number(Math.abs(dayNet)).toLocaleString("en-LK")}
+              </span>
+            </div>
+            {/* Transaction rows for this date */}
+            <div className="space-y-2">
+              {txns.map((t) => {
+                const isIncome = t.type === "Income";
+                const txTime = formatTransactionTime(t.time, t.createdAt);
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => onEdit(t)}
+                    className="glass-card p-3.5 flex items-center gap-3 hover:bg-slate-900/80 transition-colors border border-slate-800/80 cursor-pointer group"
+                    title="Click to edit or delete"
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${isIncome ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
+                      {isIncome ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-white font-bold text-sm truncate max-w-[200px] sm:max-w-xs">
+                          {t.subCategory || t.category || "General"}
+                        </p>
+                        {t.description && <span className="text-[11px] text-slate-400 truncate max-w-[140px]">&bull; {t.description}</span>}
+                      </div>
+                      <div className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                        {renderPaymentBadge(t.paymentMethod)}
+                        {txTime && (<><span className="text-slate-600">&bull;</span><span className="font-mono text-slate-300 text-[11px] whitespace-nowrap flex items-center gap-1"><Clock size={11} className="text-slate-400 shrink-0"/>{txTime}</span></>)}
+                      </div>
+                      {t.description && (
+                        <p className="text-[11px] text-slate-400 mt-1 flex items-start gap-1">
+                          <span className="text-slate-600 shrink-0">"</span>
+                          <span className="truncate italic text-slate-300">{t.description}</span>
+                          <span className="text-slate-600 shrink-0">"</span>
+                        </p>
+                      )}
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2">
+                      <span className={`text-sm font-bold font-mono whitespace-nowrap ${isIncome ? "text-emerald-400" : "text-red-400"}`}>
+                        {isIncome ? "+" : "&#8722;"} Rs.&amp;nbsp;{Number(t.amount).toLocaleString("en-LK")}
+                      </span>
+                      <div className="p-1.5 rounded-lg text-slate-500 group-hover:text-slate-300 transition-colors"><Pencil size={13}/></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      {txList.length > limit && (
+        <button onClick={onMore} className="w-full mt-1 py-3 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors flex items-center justify-center gap-2">
+          <span>See More</span>
+          <span className="text-slate-500 font-mono">({txList.length - limit} left)</span>
+        </button>
+      )}
+    </div>
+  );
+};
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -399,7 +503,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
     return transactions.filter((t) => toMonthKey(t.date) === selectedMonth);
   }, [transactions, selectedMonth]);
 
-  // Combined Cash + Bank category breakdown for all added categories
+  // Combined Cash + Bank + Cards category breakdown for all added categories
   const allCategoriesBreakdown = useMemo(() => {
     const categoryTotals = {};
     monthTransactions.forEach((t) => {
@@ -413,18 +517,28 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
           cashExpense: 0,
           bankIncome: 0,
           bankExpense: 0,
+          creditCardExpense: 0,
+          debitCardExpense: 0,
           count: 0,
         };
       }
       categoryTotals[catName].count += 1;
+      const method = t.paymentMethod || "Cash";
+      const isCash = method === "Cash";
+      const isBank = method === "Bank" || method === "Bank Transfer";
+      const isCredit = method === "Credit Card";
+      const isDebit = method === "Debit Card";
+
       if (t.type === "Income") {
         categoryTotals[catName].income += amount;
-        if (t.paymentMethod === "Cash") categoryTotals[catName].cashIncome += amount;
-        if (t.paymentMethod === "Bank") categoryTotals[catName].bankIncome += amount;
+        if (isCash) categoryTotals[catName].cashIncome += amount;
+        if (isBank) categoryTotals[catName].bankIncome += amount;
       } else {
         categoryTotals[catName].expense += amount;
-        if (t.paymentMethod === "Cash") categoryTotals[catName].cashExpense += amount;
-        if (t.paymentMethod === "Bank") categoryTotals[catName].bankExpense += amount;
+        if (isCash) categoryTotals[catName].cashExpense += amount;
+        if (isBank) categoryTotals[catName].bankExpense += amount;
+        if (isCredit) categoryTotals[catName].creditCardExpense += amount;
+        if (isDebit) categoryTotals[catName].debitCardExpense += amount;
       }
     });
 
@@ -436,6 +550,8 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
         cashExpense: 0,
         bankIncome: 0,
         bankExpense: 0,
+        creditCardExpense: 0,
+        debitCardExpense: 0,
         count: 0,
       };
       return {
@@ -450,6 +566,8 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
         cashExpense: stats.cashExpense,
         bankIncome: stats.bankIncome,
         bankExpense: stats.bankExpense,
+        creditCardExpense: stats.creditCardExpense,
+        debitCardExpense: stats.debitCardExpense,
         count: stats.count,
       };
     });
@@ -466,21 +584,29 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
     let totalInc = 0;
     let totalExp = 0;
     let cashInc = 0, bankInc = 0;
-    let cashExp = 0, bankExp = 0;
+    let cashExp = 0, bankExp = 0, creditExp = 0, debitExp = 0;
 
     catTx.forEach((t) => {
       const amount = Number(t.amount) || 0;
       const sub = t.subCategory || "Other";
+      const method = t.paymentMethod || "Cash";
+      const isCash = method === "Cash";
+      const isBank = method === "Bank" || method === "Bank Transfer";
+      const isCredit = method === "Credit Card";
+      const isDebit = method === "Debit Card";
+
       if (t.type === "Income") {
         totalInc += amount;
         incomeAgg[sub] = (incomeAgg[sub] || 0) + amount;
-        if (t.paymentMethod === "Cash") cashInc += amount;
-        if (t.paymentMethod === "Bank") bankInc += amount;
+        if (isCash) cashInc += amount;
+        if (isBank) bankInc += amount;
       } else {
         totalExp += amount;
         expenseAgg[sub] = (expenseAgg[sub] || 0) + amount;
-        if (t.paymentMethod === "Cash") cashExp += amount;
-        if (t.paymentMethod === "Bank") bankExp += amount;
+        if (isCash) cashExp += amount;
+        if (isBank) bankExp += amount;
+        if (isCredit) creditExp += amount;
+        if (isDebit) debitExp += amount;
       }
     });
 
@@ -517,6 +643,8 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
       bankIncome: bankInc,
       cashExpense: cashExp,
       bankExpense: bankExp,
+      creditExpense: creditExp,
+      debitExpense: debitExp,
       count: catTx.length,
     };
   }, [selectedNetCategory, monthTransactions]);
@@ -685,8 +813,8 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             <div>
               <div className="flex items-center gap-1.5 mb-1">
                 <p className="text-white/70 text-xs font-medium uppercase tracking-widest">Net Balance</p>
-                <span className="text-[10px] bg-white/20 text-white font-medium px-2 py-0.5 rounded-full backdrop-blur-sm">
-                  Cash + Bank
+                <span className="text-[10px] bg-white/20 text-white font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm border border-white/20 tracking-wider">
+                  Cash &bull; Bank &bull; Cards
                 </span>
               </div>
               <h3 className="text-3xl font-bold text-white tracking-tight">
@@ -698,24 +826,70 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
           </div>
           
-          <div className="flex items-end justify-between">
-            <div className="flex gap-6">
-              <div>
-                <p className="text-white/60 text-[10px] uppercase tracking-wider mb-0.5">Income</p>
-                <p className="text-white font-semibold text-sm flex items-center gap-1">
-                  <TrendingUp size={12} className="text-emerald-300" />
-                  {formatCurrency(totalIncome)}
-                </p>
-              </div>
-              <div>
-                <p className="text-white/60 text-[10px] uppercase tracking-wider mb-0.5">Expenses</p>
-                <p className="text-white font-semibold text-sm flex items-center gap-1">
-                  <TrendingDown size={12} className="text-red-300" />
-                  {formatCurrency(totalExpense)}
+          {/* Income / Expense summary row */}
+          <div className="flex gap-5 mb-4">
+            <div>
+              <p className="text-white/60 text-[10px] uppercase tracking-wider mb-0.5">Income</p>
+              <p className="text-white font-semibold text-sm flex items-center gap-1">
+                <TrendingUp size={12} className="text-emerald-300" />
+                {formatCurrency(totalIncome)}
+              </p>
+            </div>
+            <div>
+              <p className="text-white/60 text-[10px] uppercase tracking-wider mb-0.5">Expenses</p>
+              <p className="text-white font-semibold text-sm flex items-center gap-1">
+                <TrendingDown size={12} className="text-red-300" />
+                {formatCurrency(totalExpense)}
+              </p>
+            </div>
+          </div>
+
+          {/* 4-method breakdown strip */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {/* Cash */}
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10">
+              <span className="text-base leading-none">💵</span>
+              <div className="min-w-0">
+                <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Cash</p>
+                <p className={`text-xs font-bold font-mono leading-tight ${cashBalance < 0 ? "text-red-300" : "text-white"}`}>
+                  {cashBalance < 0 ? "−" : ""}{formatCurrency(Math.abs(cashBalance))}
                 </p>
               </div>
             </div>
+            {/* Bank */}
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10">
+              <span className="text-base leading-none">🏦</span>
+              <div className="min-w-0">
+                <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Bank</p>
+                <p className={`text-xs font-bold font-mono leading-tight ${bankBalance < 0 ? "text-red-300" : "text-white"}`}>
+                  {bankBalance < 0 ? "−" : ""}{formatCurrency(Math.abs(bankBalance))}
+                </p>
+              </div>
+            </div>
+            {/* Credit Card */}
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10">
+              <span className="text-base leading-none">💳</span>
+              <div className="min-w-0">
+                <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Credit</p>
+                <p className={`text-xs font-bold font-mono leading-tight ${creditCardSpent > 0 ? "text-red-300" : "text-white"}`}>
+                  {creditCardSpent > 0 ? "−" : ""}{formatCurrency(creditCardSpent)}
+                </p>
+              </div>
+            </div>
+            {/* Debit Card */}
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10">
+              <span className="text-base leading-none">💳</span>
+              <div className="min-w-0">
+                <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Debit</p>
+                <p className={`text-xs font-bold font-mono leading-tight ${debitCardSpent > 0 ? "text-red-300" : "text-white"}`}>
+                  {debitCardSpent > 0 ? "−" : ""}{formatCurrency(debitCardSpent)}
+                </p>
+              </div>
+            </div>
+          </div>
 
+          {/* Categories button */}
+          <div className="flex justify-end">
             <div className="flex items-center gap-1 text-[11px] font-semibold text-white/90 bg-black/20 hover:bg-black/30 px-3 py-1.5 rounded-xl backdrop-blur-sm border border-white/10 transition-colors">
               <span>Categories</span>
               <ChevronRight size={13} className="text-white/70 group-hover:translate-x-0.5 transition-transform" />
@@ -1158,20 +1332,12 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                       )}
                     </div>
 
-                    {filteredTx.length === 0 ? (
-                      <div className="glass-card p-6 text-center text-slate-500 text-sm">No transactions found.</div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filteredTx.slice(0, visibleTxLimit).map(renderTxRow)}
-                        {filteredTx.length > visibleTxLimit && (
-                          <button onClick={() => setVisibleTxLimit(p => p + 10)}
-                            className="w-full mt-1 py-2.5 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors"
-                          >
-                            See More ({filteredTx.length - visibleTxLimit} left)
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <DateGroupedTxList
+                      txList={filteredTx}
+                      limit={visibleTxLimit}
+                      onMore={() => setVisibleTxLimit(p => p + 10)}
+                      onEdit={(t) => setEditingTransaction(t)}
+                    />
                   </div>
                 );
               })()}
@@ -1224,7 +1390,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                       )}
                     </h2>
                     <p className="text-xs text-slate-400 truncate flex items-center gap-1.5">
-                      <span className="text-emerald-400 font-medium">Cash + Bank Combined</span>
+                      <span className="text-emerald-400 font-medium">Cash &bull; Bank &bull; Cards</span>
                       <span className="w-1 h-1 rounded-full bg-slate-600" />
                       <span>{selectedMonth}</span>
                     </p>
@@ -1259,8 +1425,8 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">Total Net Balance</p>
-                      <span className="text-[10px] bg-white/20 text-white font-medium px-2 py-0.5 rounded-full">
-                        Cash &amp; Bank
+                      <span className="text-[10px] bg-white/20 text-white font-semibold px-2 py-0.5 rounded-full border border-white/20 tracking-wider">
+                        Cash &bull; Bank &bull; Cards
                       </span>
                     </div>
                     <p className="text-3xl font-bold text-white tracking-tight mb-4">
@@ -1276,6 +1442,46 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                         <TrendingDown size={13} className="text-red-300" />
                         <span className="text-white/60 text-[11px] uppercase tracking-wider">Expense</span>
                         <span className="text-white font-bold text-sm font-mono">{formatCurrency(totalExpense)}</span>
+                      </div>
+                    </div>
+
+                    {/* 4 Payment Methods breakdown grid inside hero */}
+                    <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-white/10">
+                      <div className="flex items-center gap-2 bg-black/20 rounded-xl px-2.5 py-1.5 border border-white/5">
+                        <span className="text-sm">💵</span>
+                        <div className="min-w-0">
+                          <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Cash</p>
+                          <p className={`text-xs font-bold font-mono leading-tight ${cashBalance < 0 ? "text-red-300" : "text-white"}`}>
+                            {cashBalance < 0 ? "−" : ""}{formatCurrency(Math.abs(cashBalance))}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-black/20 rounded-xl px-2.5 py-1.5 border border-white/5">
+                        <span className="text-sm">🏦</span>
+                        <div className="min-w-0">
+                          <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Bank</p>
+                          <p className={`text-xs font-bold font-mono leading-tight ${bankBalance < 0 ? "text-red-300" : "text-white"}`}>
+                            {bankBalance < 0 ? "−" : ""}{formatCurrency(Math.abs(bankBalance))}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-black/20 rounded-xl px-2.5 py-1.5 border border-white/5">
+                        <span className="text-sm">💳</span>
+                        <div className="min-w-0">
+                          <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Credit Card</p>
+                          <p className={`text-xs font-bold font-mono leading-tight ${creditCardSpent > 0 ? "text-red-300" : "text-white"}`}>
+                            {creditCardSpent > 0 ? "−" : ""}{formatCurrency(creditCardSpent)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-black/20 rounded-xl px-2.5 py-1.5 border border-white/5">
+                        <span className="text-sm">💳</span>
+                        <div className="min-w-0">
+                          <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Debit Card</p>
+                          <p className={`text-xs font-bold font-mono leading-tight ${debitCardSpent > 0 ? "text-red-300" : "text-white"}`}>
+                            {debitCardSpent > 0 ? "−" : ""}{formatCurrency(debitCardSpent)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1436,7 +1642,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                         </div>
                       </div>
 
-                      {/* Split Summary Cards: Income & Expense (Cash + Bank combined) */}
+                      {/* Split Summary Cards: Income & Expense across all 4 payment methods */}
                       <div className="grid grid-cols-2 gap-3 pt-1">
                         <div className="glass-card p-3.5 border border-emerald-500/20 bg-emerald-500/5">
                           <p className="text-[10px] text-emerald-400/90 uppercase tracking-widest flex items-center gap-1.5 mb-1 font-semibold">
@@ -1458,10 +1664,44 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                           <p className="text-lg font-bold font-mono text-red-400">
                             {formatCurrency(selectedNetCategoryData.totalExpense)}
                           </p>
-                          <div className="mt-1 pt-1.5 border-t border-red-500/10 text-[10px] text-slate-400 flex items-center justify-between">
+                          <div className="mt-1 pt-1.5 border-t border-red-500/10 text-[10px] text-slate-400 grid grid-cols-2 gap-x-2 gap-y-0.5">
                             <span>Cash: <strong className="text-emerald-300 font-mono">{formatCurrency(selectedNetCategoryData.cashExpense).replace("Rs. ", "")}</strong></span>
                             <span>Bank: <strong className="text-sky-300 font-mono">{formatCurrency(selectedNetCategoryData.bankExpense).replace("Rs. ", "")}</strong></span>
+                            <span>Credit: <strong className="text-purple-300 font-mono">{formatCurrency(selectedNetCategoryData.creditExpense).replace("Rs. ", "")}</strong></span>
+                            <span>Debit: <strong className="text-amber-300 font-mono">{formatCurrency(selectedNetCategoryData.debitExpense).replace("Rs. ", "")}</strong></span>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* 4-payment method pills for this category */}
+                      <div className="grid grid-cols-4 gap-1.5 mt-2">
+                        <div className="glass-card p-2 text-center border border-emerald-500/20 bg-emerald-500/5">
+                          <span className="text-xs">💵</span>
+                          <p className="text-[9px] text-slate-400 uppercase font-semibold">Cash</p>
+                          <p className="text-[11px] font-bold font-mono text-white truncate">
+                            {formatCurrency(selectedNetCategoryData.cashIncome - selectedNetCategoryData.cashExpense)}
+                          </p>
+                        </div>
+                        <div className="glass-card p-2 text-center border border-sky-500/20 bg-sky-500/5">
+                          <span className="text-xs">🏦</span>
+                          <p className="text-[9px] text-slate-400 uppercase font-semibold">Bank</p>
+                          <p className="text-[11px] font-bold font-mono text-white truncate">
+                            {formatCurrency(selectedNetCategoryData.bankIncome - selectedNetCategoryData.bankExpense)}
+                          </p>
+                        </div>
+                        <div className="glass-card p-2 text-center border border-purple-500/20 bg-purple-500/5">
+                          <span className="text-xs">💳</span>
+                          <p className="text-[9px] text-slate-400 uppercase font-semibold">Credit</p>
+                          <p className="text-[11px] font-bold font-mono text-purple-300 truncate">
+                            {selectedNetCategoryData.creditExpense > 0 ? "−" : ""}{formatCurrency(selectedNetCategoryData.creditExpense)}
+                          </p>
+                        </div>
+                        <div className="glass-card p-2 text-center border border-amber-500/20 bg-amber-500/5">
+                          <span className="text-xs">💳</span>
+                          <p className="text-[9px] text-slate-400 uppercase font-semibold">Debit</p>
+                          <p className="text-[11px] font-bold font-mono text-amber-300 truncate">
+                            {selectedNetCategoryData.debitExpense > 0 ? "−" : ""}{formatCurrency(selectedNetCategoryData.debitExpense)}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1656,78 +1896,12 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                                 No transactions found.
                               </div>
                             ) : (
-                              <>
-                                {displayTx.slice(0, visibleTxLimit).map((t) => {
-                                const isIncome = t.type === "Income";
-                                const isCash = t.paymentMethod === "Cash";
-                                const txTime = formatTransactionTime(t.time, t.createdAt);
-                                return (
-                                  <div
-                                    key={t.id}
-                                    onClick={() => setEditingTransaction(t)}
-                                    className="glass-card p-3.5 flex items-center gap-3 hover:bg-slate-900/80 transition-colors border border-slate-800/80 cursor-pointer group"
-                                    title="Click to edit or delete"
-                                  >
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                                      isIncome
-                                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                                        : "bg-red-500/10 border-red-500/20 text-red-400"
-                                    }`}>
-                                      {isIncome ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="text-white font-bold text-sm tracking-tight truncate max-w-[200px] sm:max-w-xs">{t.category || t.subCategory || "General"}</p>
-                                        {t.description && <span className="text-[11px] text-slate-400 truncate max-w-[140px]">• {t.description}</span>}
-                                      </div>
-                                      <div className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
-                                        {renderPaymentBadge(t.paymentMethod)}
-                                        <span className="text-slate-600">•</span>
-                                        <span className="text-slate-300 font-medium text-[11px] whitespace-nowrap">
-                                          {t.date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                                        </span>
-                                        {txTime && (
-                                          <>
-                                            <span className="text-slate-600">•</span>
-                                            <span className="font-mono text-slate-300 text-[11px] whitespace-nowrap flex items-center gap-1">
-                                              <Clock size={11} className="text-slate-400 shrink-0" />
-                                              {txTime}
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
-                                      {t.description && (
-                                        <p className="text-[11px] text-slate-400 mt-1 flex items-start gap-1">
-                                          <span className="text-slate-600 shrink-0">"</span>
-                                          <span className="truncate italic text-slate-300">{t.description}</span>
-                                          <span className="text-slate-600 shrink-0">"</span>
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="shrink-0 flex items-center gap-2">
-                                      <div className="text-right">
-                                        <span className={`text-sm sm:text-base font-bold block font-mono tracking-tight whitespace-nowrap ${
-                                          isIncome ? "text-emerald-400" : "text-red-400"
-                                        }`}>
-                                          {isIncome ? "+" : "−"} Rs. {Number(t.amount).toLocaleString("en-LK")}
-                                        </span>
-                                      </div>
-                                      <div className="p-1.5 rounded-lg text-slate-500 group-hover:text-slate-300 hover:bg-slate-800 transition-colors">
-                                        <Pencil size={13} />
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                              {displayTx.length > visibleTxLimit && (
-                                <button
-                                  onClick={() => setVisibleTxLimit(prev => prev + 10)}
-                                  className="w-full mt-2 py-2.5 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors"
-                                >
-                                  See More ({displayTx.length - visibleTxLimit} left)
-                                </button>
-                              )}
-                            </>
+                              <DateGroupedTxList
+                                txList={displayTx}
+                                limit={visibleTxLimit}
+                                onMore={() => setVisibleTxLimit(prev => prev + 10)}
+                                onEdit={(t) => setEditingTransaction(t)}
+                              />
                           )}
                         </div>
                         </div>
@@ -1910,75 +2084,12 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                           No transactions found.
                         </div>
                       ) : (
-                        <>
-                          {listTx.slice(0, visibleTxLimit).map(t => {
-                          const isIncome = t.type === "Income";
-                          const isCash = t.paymentMethod === "Cash";
-                          const txTime = formatTransactionTime(t.time, t.createdAt);
-                          return (
-                            <div
-                              key={t.id}
-                              onClick={() => setEditingTransaction(t)}
-                              className="glass-card p-3.5 flex items-center gap-3 hover:bg-slate-900/80 transition-colors cursor-pointer group"
-                              title="Click to edit or delete"
-                            >
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                                isIncome 
-                                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
-                                  : "bg-red-500/10 border-red-500/20 text-red-400"
-                              }`}>
-                                {isIncome ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-white font-bold text-sm tracking-tight truncate">{t.category || t.subCategory || "General"}</p>
-                                <div className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
-                                  {renderPaymentBadge(t.paymentMethod)}
-                                  <span className="text-slate-600">•</span>
-                                  <span className="text-slate-300 font-medium text-[11px] whitespace-nowrap">
-                                    {t.date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                                  </span>
-                                  {txTime && (
-                                    <>
-                                      <span className="text-slate-600">•</span>
-                                      <span className="font-mono text-slate-300 text-[11px] whitespace-nowrap flex items-center gap-1">
-                                        <Clock size={11} className="text-slate-400 shrink-0" />
-                                        {txTime}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                                {t.description && (
-                                  <p className="text-[11px] text-slate-400 mt-1 flex items-start gap-1">
-                                    <span className="text-slate-600 shrink-0 mt-px">"</span>
-                                    <span className="truncate italic text-slate-300">{t.description}</span>
-                                    <span className="text-slate-600 shrink-0 mt-px">"</span>
-                                  </p>
-                                )}
-                              </div>
-                              <div className="shrink-0 flex items-center gap-2">
-                                <div className="text-right">
-                                  <span className={`text-sm sm:text-base font-bold block font-mono tracking-tight whitespace-nowrap ${
-                                    isIncome ? "text-emerald-400" : "text-red-400"
-                                  }`}>
-                                    {isIncome ? "+" : "−"} Rs. {Number(t.amount).toLocaleString("en-LK")}
-                                  </span>
-                                </div>
-                                <div className="p-1.5 rounded-lg text-slate-500 group-hover:text-slate-300 hover:bg-slate-800 transition-colors">
-                                  <Pencil size={13} />
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {listTx.length > visibleTxLimit && (
-                          <button
-                            onClick={() => setVisibleTxLimit(prev => prev + 10)}
-                            className="w-full mt-2 py-2.5 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors"
-                          >
-                            See More ({listTx.length - visibleTxLimit} left)
-                          </button>
-                        )}
-                      </>
+                        <DateGroupedTxList
+                          txList={listTx}
+                          limit={visibleTxLimit}
+                          onMore={() => setVisibleTxLimit(prev => prev + 10)}
+                          onEdit={(t) => setEditingTransaction(t)}
+                        />
                     )}
                   </div>
                   </>

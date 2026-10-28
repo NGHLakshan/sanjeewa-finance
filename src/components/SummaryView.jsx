@@ -83,7 +83,9 @@ export default function SummaryView({ transactions }) {
       return td >= windowStart && td <= windowEnd;
     });
 
-    let inc = 0, exp = 0, cashInc = 0, bankInc = 0, cashExp = 0, bankExp = 0;
+    let inc = 0, exp = 0;
+    let cashInc = 0, bankInc = 0;
+    let cashExp = 0, bankExp = 0, creditExp = 0, debitExp = 0;
     const catMap = {};
     const filledBars = emptyBars.map((b) => ({ ...b }));
 
@@ -91,15 +93,22 @@ export default function SummaryView({ transactions }) {
       const amount = Number(t.amount) || 0;
       const td = t.date instanceof Date ? t.date : new Date(t.date);
       const isIncome = t.type === "Income";
+      const method = t.paymentMethod || "Cash";
+      const isCash = method === "Cash";
+      const isBank = method === "Bank" || method === "Bank Transfer";
+      const isCredit = method === "Credit Card";
+      const isDebit = method === "Debit Card";
 
       if (isIncome) {
         inc += amount;
-        if (t.paymentMethod === "Cash") cashInc += amount;
-        else bankInc += amount;
+        if (isCash) cashInc += amount;
+        else if (isBank) bankInc += amount;
       } else {
         exp += amount;
-        if (t.paymentMethod === "Cash") cashExp += amount;
-        else bankExp += amount;
+        if (isCash) cashExp += amount;
+        else if (isBank) bankExp += amount;
+        else if (isCredit) creditExp += amount;
+        else if (isDebit) debitExp += amount;
       }
 
       // bar data
@@ -136,7 +145,7 @@ export default function SummaryView({ transactions }) {
 
     return {
       filtered: inWindow,
-      totals: { inc, exp, cashInc, bankInc, cashExp, bankExp },
+      totals: { inc, exp, cashInc, bankInc, cashExp, bankExp, creditExp, debitExp },
       catBreakdown: catArr,
       barChartData: filledBars,
       pieData: pie,
@@ -291,36 +300,53 @@ export default function SummaryView({ transactions }) {
                 </div>
               </div>
 
-              {/* Cash vs Bank */}
+              {/* 4 Payment Methods (Cash, Bank, Credit Card, Debit Card) */}
               <div className="glass-card p-4 mb-5">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Cash vs Bank</p>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Payment Methods</p>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label: "Cash", emoji: "💵", color: "emerald", inc: totals.cashInc, exp: totals.cashExp },
-                    { label: "Bank", emoji: "🏦", color: "sky",     inc: totals.bankInc, exp: totals.bankExp },
-                  ].map(({ label: ml, emoji, color, inc: mInc, exp: mExp }) => {
+                    { label: "Cash", emoji: "💵", color: "emerald", inc: totals.cashInc, exp: totals.cashExp, isCard: false },
+                    { label: "Bank Transfer", emoji: "🏦", color: "sky", inc: totals.bankInc, exp: totals.bankExp, isCard: false },
+                    { label: "Credit Card", emoji: "💳", color: "purple", inc: 0, exp: totals.creditExp, isCard: true },
+                    { label: "Debit Card", emoji: "💳", color: "amber", inc: 0, exp: totals.debitExp, isCard: true },
+                  ].map(({ label: ml, emoji, color, inc: mInc, exp: mExp, isCard }) => {
                     const mNet = mInc - mExp;
                     return (
                       <div key={ml} className={`bg-${color}-500/10 border border-${color}-500/20 rounded-xl p-3`}>
                         <div className="flex items-center gap-1.5 mb-2">
                           <span className="text-sm">{emoji}</span>
-                          <span className={`text-[11px] font-semibold text-${color}-400 uppercase tracking-wider`}>{ml}</span>
+                          <span className={`text-[11px] font-semibold text-${color}-400 uppercase tracking-wider truncate`}>{ml}</span>
                         </div>
                         <div className="space-y-1">
-                          <div className="flex justify-between">
-                            <span className="text-[10px] text-slate-400">In</span>
-                            <span className="text-[10px] font-bold text-emerald-400 font-mono">Rs. {Number(mInc).toLocaleString("en-LK")}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[10px] text-slate-400">Out</span>
-                            <span className="text-[10px] font-bold text-red-400 font-mono">Rs. {Number(mExp).toLocaleString("en-LK")}</span>
-                          </div>
-                          <div className={`border-t border-${color}-500/20 pt-1 flex justify-between`}>
-                            <span className="text-[10px] text-slate-300 font-medium">Net</span>
-                            <span className={`text-[10px] font-bold font-mono ${mNet >= 0 ? "text-emerald-300" : "text-red-300"}`}>
-                              {mNet >= 0 ? "+" : "−"} Rs. {Number(Math.abs(mNet)).toLocaleString("en-LK")}
-                            </span>
-                          </div>
+                          {!isCard ? (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-[10px] text-slate-400">In</span>
+                                <span className="text-[10px] font-bold text-emerald-400 font-mono">Rs. {Number(mInc).toLocaleString("en-LK")}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-[10px] text-slate-400">Out</span>
+                                <span className="text-[10px] font-bold text-red-400 font-mono">Rs. {Number(mExp).toLocaleString("en-LK")}</span>
+                              </div>
+                              <div className={`border-t border-${color}-500/20 pt-1 flex justify-between`}>
+                                <span className="text-[10px] text-slate-300 font-medium">Net</span>
+                                <span className={`text-[10px] font-bold font-mono ${mNet >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                                  {mNet >= 0 ? "+" : "−"} Rs. {Number(Math.abs(mNet)).toLocaleString("en-LK")}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-[10px] text-slate-400">Total Spent</span>
+                                <span className={`text-[10px] font-bold font-mono text-${color}-300`}>Rs. {Number(mExp).toLocaleString("en-LK")}</span>
+                              </div>
+                              <div className={`border-t border-${color}-500/20 pt-1 flex justify-between`}>
+                                <span className="text-[10px] text-slate-400">Type</span>
+                                <span className={`text-[10px] font-semibold text-${color}-400`}>Card Expense</span>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     );
