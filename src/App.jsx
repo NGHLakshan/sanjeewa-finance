@@ -219,9 +219,10 @@ export default function App({ onReady }) {
 
   return (
     <div className="h-[100dvh] w-screen bg-slate-950 flex flex-col overflow-hidden relative">
-      {/* Background ambient light */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-[120px] pointer-events-none" />
+      {/* 3D Cyber Ambient Glow Orbs */}
+      <div className="absolute -top-24 left-1/4 w-[480px] h-[480px] bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-transparent rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute top-1/3 -right-20 w-[420px] h-[420px] bg-gradient-to-bl from-cyan-500/12 via-sky-500/8 to-transparent rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute -bottom-24 -left-20 w-[460px] h-[460px] bg-gradient-to-tr from-purple-500/10 via-emerald-500/8 to-transparent rounded-full blur-[130px] pointer-events-none" />
 
       {/* Toaster for premium notifications */}
       <Toaster 
@@ -329,11 +330,11 @@ export default function App({ onReady }) {
                   active ? "text-emerald-400" : "text-slate-500 hover:text-slate-300"
                 }`}
               >
-                {/* Active Background Glow */}
+                {/* 3D Active Neon Glow Pill */}
                 {active && (
                   <motion.div 
                     layoutId="nav-pill"
-                    className="absolute inset-0 bg-emerald-500/10 rounded-xl"
+                    className="absolute inset-0 bg-gradient-to-b from-emerald-500/20 via-teal-500/10 to-slate-900/40 rounded-xl border border-emerald-400/30 border-t-emerald-300/50 shadow-[0_0_15px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.2)]"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}

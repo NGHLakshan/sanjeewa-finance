@@ -679,118 +679,141 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
         </div>
       </div>
 
-      {/* Top New Entry Button */}
+      {/* Top New Entry Button - 3D Cyber Tactile */}
       {onNewEntry && (
         <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.015, y: -2 }}
+          whileTap={{ scale: 0.985, y: 2 }}
           onClick={onNewEntry}
-          className="w-full mb-6 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-white text-lg font-bold py-4 rounded-2xl transition-all shadow-xl shadow-emerald-500/20 backdrop-blur-md"
+          className="w-full mb-6 relative overflow-hidden flex items-center justify-center gap-2.5 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 font-black py-4 px-6 rounded-2xl transition-all shadow-[0_12px_28px_-6px_rgba(16,185,129,0.55),inset_0_1px_2px_rgba(255,255,255,0.7),inset_0_-3px_0_rgba(4,120,87,0.7)] border-t border-white/40 cursor-pointer group"
         >
-          <PlusCircle size={22} />
-          <span>+ New Entry</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+          <div className="w-7 h-7 rounded-lg bg-black/15 flex items-center justify-center shadow-inner">
+            <PlusCircle size={19} className="text-slate-950 stroke-[2.5]" />
+          </div>
+          <span className="tracking-wider uppercase text-base font-extrabold">+ New Entry</span>
         </motion.button>
       )}
 
-      {/* 4 Payment Method Cards (Cash, Bank Transfer, Credit Card, Debit Card) */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      {/* 4 Payment Method Cards - 3D Cyber Glass (Cash, Bank, Credit, Debit) */}
+      <div className="grid grid-cols-2 gap-3.5 mb-6">
         {/* Cash */}
         <motion.button 
           onClick={() => setSelectedMethod("Cash")}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98, y: 1 }}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden glass-card p-3.5 sm:p-4 border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-transparent text-left cursor-pointer outline-none rounded-2xl group hover:border-emerald-500/50 transition-all"
+          className="relative overflow-hidden p-4 rounded-2xl text-left cursor-pointer outline-none group transition-all
+                     bg-gradient-to-b from-slate-900/90 via-slate-900/70 to-emerald-950/30
+                     border border-emerald-500/20 border-t-emerald-400/40 border-l-emerald-400/30
+                     shadow-[0_12px_24px_-8px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2),inset_0_-2px_4px_rgba(0,0,0,0.4)]
+                     hover:shadow-[0_16px_32px_-6px_rgba(16,185,129,0.3),inset_0_1px_2px_rgba(255,255,255,0.3)]
+                     hover:border-emerald-400/60"
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                <Banknote size={16} className="text-emerald-400" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400/25 to-emerald-600/10 border border-emerald-400/35 flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(16,185,129,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)] group-hover:scale-105 transition-transform">
+                <Banknote size={17} className="text-emerald-300 drop-shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
               </div>
               <span className="text-xs font-bold text-white tracking-wide">Cash</span>
             </div>
-            <span className="text-[9px] uppercase font-bold text-emerald-400/90 bg-emerald-500/15 px-2 py-0.5 rounded-full border border-emerald-500/20">In Hand</span>
+            <span className="text-[9px] uppercase font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30 shadow-[0_0_8px_rgba(16,185,129,0.25)]">In Hand</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight">
+          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">
             {cashBalance < 0 && "−"}{formatCurrency(Math.abs(cashBalance))}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">Cash wallet balance</p>
+          <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Cash in hand balance</p>
         </motion.button>
         
         {/* Bank Transfer */}
         <motion.button 
           onClick={() => setSelectedMethod("Bank Transfer")}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98, y: 1 }}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="relative overflow-hidden glass-card p-3.5 sm:p-4 border border-sky-500/25 bg-gradient-to-br from-sky-500/10 to-transparent text-left cursor-pointer outline-none rounded-2xl group hover:border-sky-500/50 transition-all"
+          className="relative overflow-hidden p-4 rounded-2xl text-left cursor-pointer outline-none group transition-all
+                     bg-gradient-to-b from-slate-900/90 via-slate-900/70 to-sky-950/30
+                     border border-sky-500/20 border-t-sky-400/40 border-l-sky-400/30
+                     shadow-[0_12px_24px_-8px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2),inset_0_-2px_4px_rgba(0,0,0,0.4)]
+                     hover:shadow-[0_16px_32px_-6px_rgba(56,189,248,0.3),inset_0_1px_2px_rgba(255,255,255,0.3)]
+                     hover:border-sky-400/60"
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                <Building2 size={16} className="text-sky-400" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-400/25 to-sky-600/10 border border-sky-400/35 flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(56,189,248,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)] group-hover:scale-105 transition-transform">
+                <Building2 size={17} className="text-sky-300 drop-shadow-[0_0_6px_rgba(56,189,248,0.6)]" />
               </div>
               <span className="text-xs font-bold text-white tracking-wide truncate">Bank Transfer</span>
             </div>
-            <span className="text-[9px] uppercase font-bold text-sky-400/90 bg-sky-500/15 px-2 py-0.5 rounded-full border border-sky-500/20">Account</span>
+            <span className="text-[9px] uppercase font-bold text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded-full border border-sky-400/30 shadow-[0_0_8px_rgba(56,189,248,0.25)]">Account</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight">
+          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">
             {bankBalance < 0 && "−"}{formatCurrency(Math.abs(bankBalance))}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">Bank / Transfer balance</p>
+          <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Bank account balance</p>
         </motion.button>
 
         {/* Credit Card */}
         <motion.button 
           onClick={() => setSelectedMethod("Credit Card")}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98, y: 1 }}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="relative overflow-hidden glass-card p-3.5 sm:p-4 border border-purple-500/25 bg-gradient-to-br from-purple-500/10 to-transparent text-left cursor-pointer outline-none rounded-2xl group hover:border-purple-500/50 transition-all"
+          className="relative overflow-hidden p-4 rounded-2xl text-left cursor-pointer outline-none group transition-all
+                     bg-gradient-to-b from-slate-900/90 via-slate-900/70 to-purple-950/30
+                     border border-purple-500/20 border-t-purple-400/40 border-l-purple-400/30
+                     shadow-[0_12px_24px_-8px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2),inset_0_-2px_4px_rgba(0,0,0,0.4)]
+                     hover:shadow-[0_16px_32px_-6px_rgba(168,85,247,0.3),inset_0_1px_2px_rgba(255,255,255,0.3)]
+                     hover:border-purple-400/60"
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                <CreditCard size={16} className="text-purple-400" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-400/25 to-purple-600/10 border border-purple-400/35 flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(168,85,247,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)] group-hover:scale-105 transition-transform">
+                <CreditCard size={17} className="text-purple-300 drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]" />
               </div>
               <span className="text-xs font-bold text-white tracking-wide truncate">Credit Card</span>
             </div>
-            <span className="text-[9px] uppercase font-bold text-purple-400/90 bg-purple-500/15 px-2 py-0.5 rounded-full border border-purple-500/20">Spends</span>
+            <span className="text-[9px] uppercase font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-400/30 shadow-[0_0_8px_rgba(168,85,247,0.25)]">Spends</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-purple-300 tracking-tight">
+          <h3 className="text-base sm:text-lg font-bold font-mono text-purple-300 tracking-tight drop-shadow-sm">
             {formatCurrency(creditCardSpent)}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">Credit card monthly bill</p>
+          <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Monthly card spends</p>
         </motion.button>
 
         {/* Debit Card */}
         <motion.button 
           onClick={() => setSelectedMethod("Debit Card")}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98, y: 1 }}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          className="relative overflow-hidden glass-card p-3.5 sm:p-4 border border-amber-500/25 bg-gradient-to-br from-amber-500/10 to-transparent text-left cursor-pointer outline-none rounded-2xl group hover:border-amber-500/50 transition-all"
+          className="relative overflow-hidden p-4 rounded-2xl text-left cursor-pointer outline-none group transition-all
+                     bg-gradient-to-b from-slate-900/90 via-slate-900/70 to-amber-950/30
+                     border border-amber-500/20 border-t-amber-400/40 border-l-amber-400/30
+                     shadow-[0_12px_24px_-8px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.2),inset_0_-2px_4px_rgba(0,0,0,0.4)]
+                     hover:shadow-[0_16px_32px_-6px_rgba(245,158,11,0.3),inset_0_1px_2px_rgba(255,255,255,0.3)]
+                     hover:border-amber-400/60"
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                <Wallet size={16} className="text-amber-400" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400/25 to-amber-600/10 border border-amber-400/35 flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(245,158,11,0.3),inset_0_1px_1px_rgba(255,255,255,0.3)] group-hover:scale-105 transition-transform">
+                <Wallet size={17} className="text-amber-300 drop-shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
               </div>
               <span className="text-xs font-bold text-white tracking-wide truncate">Debit Card</span>
             </div>
-            <span className="text-[9px] uppercase font-bold text-amber-400/90 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/20">Spends</span>
+            <span className="text-[9px] uppercase font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30 shadow-[0_0_8px_rgba(245,158,11,0.25)]">Spends</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-amber-300 tracking-tight">
+          <h3 className="text-base sm:text-lg font-bold font-mono text-amber-300 tracking-tight drop-shadow-sm">
             {formatCurrency(debitCardSpent)}
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">Direct debit card spend</p>
+          <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Direct debit spend</p>
         </motion.button>
       </div>
 
-      {/* Credit Card Style Net Profit (Interactive / Clickable) */}
+      {/* 3D Cyber Floating Net Balance Slab */}
       <motion.div 
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.015, y: -3 }}
+        whileTap={{ scale: 0.985, y: 1 }}
         onClick={() => {
           setShowNetCategoryModal(true);
           setSelectedNetCategory(null);
@@ -798,90 +821,92 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
         }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`relative overflow-hidden rounded-3xl p-6 mb-6 border border-white/10 shadow-2xl cursor-pointer select-none transition-shadow hover:shadow-emerald-500/10 group ${
+        className={`relative overflow-hidden rounded-3xl p-6 mb-6 cursor-pointer select-none transition-all duration-300 group ${
           isProfitable 
-            ? "bg-gradient-to-br from-emerald-600 to-sky-600 glow-emerald" 
-            : "bg-gradient-to-br from-slate-800 to-red-900 glow-red"
+            ? "bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 border border-emerald-400/30 border-t-emerald-300/60 border-l-emerald-300/40 shadow-[0_20px_45px_-12px_rgba(16,185,129,0.45),0_0_35px_rgba(16,185,129,0.2),inset_0_1px_2px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.5)]" 
+            : "bg-gradient-to-br from-rose-800 via-slate-900 to-slate-950 border border-rose-500/30 border-t-rose-400/60 border-l-rose-400/40 shadow-[0_20px_45px_-12px_rgba(239,68,68,0.45),0_0_35px_rgba(239,68,68,0.2),inset_0_1px_2px_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.5)]"
         }`}
       >
-        {/* Abstract background shapes */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-500" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-black/20 rounded-full blur-2xl" />
+        {/* Holographic 3D ambient glows */}
+        <div className="absolute -top-28 -right-28 w-56 h-56 bg-white/15 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-700 pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-52 h-52 bg-black/40 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.12),transparent_70%)] pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+        <div className="relative z-10 flex flex-col h-full justify-between gap-5">
           <div className="flex justify-between items-start">
             <div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <p className="text-white/70 text-xs font-medium uppercase tracking-widest">Net Balance</p>
-                <span className="text-[10px] bg-white/20 text-white font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm border border-white/20 tracking-wider">
+              <div className="flex items-center gap-2 mb-1.5">
+                <p className="text-white/80 text-xs font-bold uppercase tracking-widest drop-shadow-sm">Net Balance</p>
+                <span className="text-[10px] bg-black/25 text-white font-extrabold px-2.5 py-0.5 rounded-full border border-white/20 shadow-inner backdrop-blur-md tracking-wider">
                   Cash &bull; Bank &bull; Cards
                 </span>
               </div>
-              <h3 className="text-3xl font-bold text-white tracking-tight">
+              <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-mono drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
                 {netProfit < 0 && "−"}{formatCurrency(Math.abs(netProfit))}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:bg-white/30 transition-colors shadow-inner">
-              <Wallet size={20} className="text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/25 to-white/5 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.4)] group-hover:scale-110 transition-transform">
+              <Wallet size={22} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
             </div>
           </div>
           
           {/* Income / Expense summary row */}
-          <div className="flex gap-5 mb-4">
-            <div>
-              <p className="text-white/60 text-[10px] uppercase tracking-wider mb-0.5">Income</p>
-              <p className="text-white font-semibold text-sm flex items-center gap-1">
-                <TrendingUp size={12} className="text-emerald-300" />
+          <div className="flex gap-6 py-2 px-3 rounded-2xl bg-black/20 backdrop-blur-md border border-white/10 shadow-inner">
+            <div className="flex-1">
+              <p className="text-white/70 text-[10px] uppercase font-bold tracking-wider mb-0.5">Total Income</p>
+              <p className="text-emerald-300 font-bold text-sm font-mono flex items-center gap-1">
+                <TrendingUp size={14} className="text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
                 {formatCurrency(totalIncome)}
               </p>
             </div>
-            <div>
-              <p className="text-white/60 text-[10px] uppercase tracking-wider mb-0.5">Expenses</p>
-              <p className="text-white font-semibold text-sm flex items-center gap-1">
-                <TrendingDown size={12} className="text-red-300" />
+            <div className="w-px bg-white/15 my-0.5" />
+            <div className="flex-1">
+              <p className="text-white/70 text-[10px] uppercase font-bold tracking-wider mb-0.5">Total Expense</p>
+              <p className="text-red-300 font-bold text-sm font-mono flex items-center gap-1">
+                <TrendingDown size={14} className="text-red-400 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
                 {formatCurrency(totalExpense)}
               </p>
             </div>
           </div>
 
-          {/* 4-method breakdown strip */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          {/* 4-method 3D breakdown strip */}
+          <div className="grid grid-cols-2 gap-2">
             {/* Cash */}
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10">
-              <span className="text-base leading-none">💵</span>
+            <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <span className="text-base leading-none drop-shadow">💵</span>
               <div className="min-w-0">
-                <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Cash</p>
+                <p className="text-white/70 text-[9px] uppercase tracking-wider font-bold">Cash</p>
                 <p className={`text-xs font-bold font-mono leading-tight ${cashBalance < 0 ? "text-red-300" : "text-white"}`}>
                   {cashBalance < 0 ? "−" : ""}{formatCurrency(Math.abs(cashBalance))}
                 </p>
               </div>
             </div>
             {/* Bank */}
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10">
-              <span className="text-base leading-none">🏦</span>
+            <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <span className="text-base leading-none drop-shadow">🏦</span>
               <div className="min-w-0">
-                <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Bank</p>
+                <p className="text-white/70 text-[9px] uppercase tracking-wider font-bold">Bank</p>
                 <p className={`text-xs font-bold font-mono leading-tight ${bankBalance < 0 ? "text-red-300" : "text-white"}`}>
                   {bankBalance < 0 ? "−" : ""}{formatCurrency(Math.abs(bankBalance))}
                 </p>
               </div>
             </div>
             {/* Credit Card */}
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10">
-              <span className="text-base leading-none">💳</span>
+            <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <span className="text-base leading-none drop-shadow">💳</span>
               <div className="min-w-0">
-                <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Credit</p>
-                <p className={`text-xs font-bold font-mono leading-tight ${creditCardSpent > 0 ? "text-red-300" : "text-white"}`}>
+                <p className="text-white/70 text-[9px] uppercase tracking-wider font-bold">Credit</p>
+                <p className={`text-xs font-bold font-mono leading-tight ${creditCardSpent > 0 ? "text-purple-300" : "text-white"}`}>
                   {creditCardSpent > 0 ? "−" : ""}{formatCurrency(creditCardSpent)}
                 </p>
               </div>
             </div>
             {/* Debit Card */}
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/10">
-              <span className="text-base leading-none">💳</span>
+            <div className="flex items-center gap-2.5 bg-black/25 backdrop-blur-md rounded-xl px-3 py-2 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+              <span className="text-base leading-none drop-shadow">💳</span>
               <div className="min-w-0">
-                <p className="text-white/60 text-[9px] uppercase tracking-wider font-semibold">Debit</p>
-                <p className={`text-xs font-bold font-mono leading-tight ${debitCardSpent > 0 ? "text-red-300" : "text-white"}`}>
+                <p className="text-white/70 text-[9px] uppercase tracking-wider font-bold">Debit</p>
+                <p className={`text-xs font-bold font-mono leading-tight ${debitCardSpent > 0 ? "text-amber-300" : "text-white"}`}>
                   {debitCardSpent > 0 ? "−" : ""}{formatCurrency(debitCardSpent)}
                 </p>
               </div>
@@ -889,10 +914,10 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
           </div>
 
           {/* Categories button */}
-          <div className="flex justify-end">
-            <div className="flex items-center gap-1 text-[11px] font-semibold text-white/90 bg-black/20 hover:bg-black/30 px-3 py-1.5 rounded-xl backdrop-blur-sm border border-white/10 transition-colors">
-              <span>Categories</span>
-              <ChevronRight size={13} className="text-white/70 group-hover:translate-x-0.5 transition-transform" />
+          <div className="flex justify-end pt-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-white bg-black/35 hover:bg-black/50 px-3.5 py-1.5 rounded-xl backdrop-blur-md border border-white/15 shadow-[0_2px_8px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all">
+              <span>View Categories</span>
+              <ChevronRight size={14} className="text-white/80 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
         </div>
