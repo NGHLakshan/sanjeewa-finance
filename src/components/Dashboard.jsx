@@ -1480,35 +1480,21 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                     </div>
                   </div>
 
-                  {/* ── Income & Expense Breakdown Chart + All Transactions List ── */}
+                  {/* ── Income & Expense Breakdown Chart (Solid Single Colors) + All Transactions List ── */}
                   {(() => {
-                    const INC_COLORS = ['#10b981','#34d399','#6ee7b7','#059669','#14b8a6','#0f766e'];
-                    const EXP_COLORS = ['#ef4444','#f97316','#f59e0b','#a855f7','#ec4899','#06b6d4','#fb923c','#8b5cf6'];
-
-                    const incCats = allCategoriesBreakdown
-                      .filter(c => { const f = categories.find(x => x.name === c.name); return f ? f.type === 'Income' : c.income > 0; })
-                      .filter(c => c.income > 0);
-                    const expCats = allCategoriesBreakdown
-                      .filter(c => { const f = categories.find(x => x.name === c.name); return f ? f.type === 'Expense' : c.expense > 0; })
-                      .filter(c => c.expense > 0);
-
-                    const incEntry = { type: '↑ Income' };
-                    incCats.forEach(c => { incEntry[c.name] = c.income; });
-                    const expEntry = { type: '↓ Expenses' };
-                    expCats.forEach(c => { expEntry[c.name] = c.expense; });
-                    const stackData = [
-                      ...(totalIncome > 0 ? [incEntry] : []),
-                      ...(totalExpense > 0 ? [expEntry] : []),
+                    const solidBarData = [
+                      ...(totalIncome > 0 ? [{ type: '↑ Income', amount: totalIncome, fill: '#10b981' }] : []),
+                      ...(totalExpense > 0 ? [{ type: '↓ Expenses', amount: totalExpense, fill: '#ef4444' }] : []),
                     ];
 
                     return (
                       <div className="mb-6">
-                        {stackData.length > 0 && (
+                        {solidBarData.length > 0 && (
                           <div className="glass-card p-4 mb-5">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-center">Income &amp; Expense Breakdown</p>
-                            <div style={{ height: `${stackData.length * 54 + 16}px` }} className="w-full">
+                            <div style={{ height: `${solidBarData.length * 54 + 16}px` }} className="w-full">
                               <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={stackData} layout="vertical" margin={{ top: 0, right: 6, left: 72, bottom: 0 }}>
+                                <BarChart data={solidBarData} layout="vertical" margin={{ top: 0, right: 16, left: 72, bottom: 0 }}>
                                   <XAxis type="number" tick={{ fill: '#475569', fontSize: 9, fontFamily: 'monospace' }}
                                     axisLine={false} tickLine={false}
                                     tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
@@ -1516,22 +1502,15 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                                     tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 700 }}
                                     axisLine={false} tickLine={false} />
                                   <Tooltip
-                                    formatter={(value, name) => [formatCurrency(value), name]}
+                                    formatter={(value) => [formatCurrency(value), 'Total']}
                                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
                                     cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                                   />
-                                  {incCats.map((cat, i) => (
-                                    <Bar key={`ni-${cat.name}`} dataKey={cat.name} stackId="a"
-                                      fill={`${INC_COLORS[i % INC_COLORS.length]}cc`}
-                                      radius={i === incCats.length - 1 && expCats.length === 0 ? [0,6,6,0] : [0,0,0,0]}
-                                    />
-                                  ))}
-                                  {expCats.map((cat, i) => (
-                                    <Bar key={`ne-${cat.name}`} dataKey={cat.name} stackId="a"
-                                      fill={`${EXP_COLORS[i % EXP_COLORS.length]}cc`}
-                                      radius={i === expCats.length - 1 ? [0,6,6,0] : [0,0,0,0]}
-                                    />
-                                  ))}
+                                  <Bar dataKey="amount" radius={[0, 6, 6, 0]} maxBarSize={28}>
+                                    {solidBarData.map((entry, index) => (
+                                      <Cell key={`solid-bar-${index}`} fill={entry.fill} />
+                                    ))}
+                                  </Bar>
                                 </BarChart>
                               </ResponsiveContainer>
                             </div>
