@@ -896,15 +896,17 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
       )}
 
       {/* Drill-Down Modal */}
-      <AnimatePresence>
-        {selectedMethod && modalData && createPortal(
-          <motion.div
-            initial={{ opacity: 0, y: "100%" }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[100] bg-slate-950 flex flex-col"
-          >
+      {createPortal(
+        <AnimatePresence>
+          {selectedMethod && modalData && (
+            <motion.div
+              key={`drilldown-modal-${selectedMethod}`}
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-0 z-[100] bg-slate-950 flex flex-col"
+            >
             {/* Header — always at top (no sticky needed outside scroll container) */}
             <div className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/60 px-4 pt-safe pb-4">
               <div className="max-w-lg mx-auto flex items-center justify-between">
@@ -1175,21 +1177,24 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               })()}
             </div>
             </ScrollResetContainer>
-          </motion.div>,
-          document.body
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* ── Net Balance & Category Breakdown Modal (Cash + Bank Combined) ── */}
-      <AnimatePresence>
-        {showNetCategoryModal && createPortal(
-          <motion.div
-            initial={{ opacity: 0, y: "100%" }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[100] bg-slate-950 flex flex-col"
-          >
+      {createPortal(
+        <AnimatePresence>
+          {showNetCategoryModal && (
+            <motion.div
+              key="net-category-breakdown-modal"
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-0 z-[100] bg-slate-950 flex flex-col"
+            >
             {/* Header — always at top */}
             <div className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/60 px-4 pt-safe pb-4">
               <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
@@ -1733,21 +1738,24 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               )}
             </div>
             </ScrollResetContainer>
-          </motion.div>,
-          document.body
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Category Detail View Modal */}
-      <AnimatePresence>
-        {viewingCategory && categoryDetailsData && createPortal(
-          <motion.div
-            initial={{ opacity: 0, y: "100%" }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-[110] bg-slate-950 flex flex-col"
-          >
+      {createPortal(
+        <AnimatePresence>
+          {viewingCategory && categoryDetailsData && (
+            <motion.div
+              key={`category-detail-modal-${viewingCategory}`}
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-0 z-[110] bg-slate-950 flex flex-col"
+            >
             {/* Header — always at top */}
             <div className="shrink-0 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/60 px-4 pt-safe pb-4">
               <div className="max-w-lg mx-auto flex items-center justify-between">
@@ -1978,10 +1986,11 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               })()}
             </div>
             </ScrollResetContainer>
-          </motion.div>,
-          document.body
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       {/* Edit Transaction Modal */}
       <AnimatePresence>
@@ -1998,8 +2007,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
       <AnimatePresence>
         {managingCategory && (
           <CategoryManagerModal
-            key={managingCategory.id}
-            category={managingCategory}
+            categories={categories}
             onClose={() => setManagingCategory(null)}
           />
         )}
