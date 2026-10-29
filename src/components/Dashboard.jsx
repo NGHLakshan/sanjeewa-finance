@@ -808,7 +808,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
           <div className="w-7 h-7 rounded-lg bg-black/15 flex items-center justify-center shadow-inner">
             <PlusCircle size={19} className="text-slate-950 stroke-[2.5]" />
           </div>
-          <span className="tracking-wider uppercase text-base font-extrabold">+ New Entry</span>
+          <span className="tracking-wider uppercase text-base font-extrabold">New Entry</span>
         </motion.button>
       )}
 
