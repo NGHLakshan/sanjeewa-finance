@@ -48,7 +48,7 @@ export default function SummaryView({ transactions }) {
   const [period, setPeriod]       = useState("week"); // "day" | "week" | "month"
   const [cursor, setCursor]       = useState(() => new Date());
   const [expandedCat, setExpandedCat] = useState(null);
-  const [selectedMethod, setSelectedMethod] = useState(null); // null = All, "Cash", "Bank Transfer", "Credit Card", "Debit Card"
+  const [selectedCat, setSelectedCat] = useState(null); // null = All, or category name string (e.g. "Salary")
 
   // ── window boundaries ────────────────────────────────────────────────────────
   const { windowStart, windowEnd, label, emptyBars } = useMemo(() => {
@@ -154,36 +154,41 @@ export default function SummaryView({ transactions }) {
     };
   }, [transactions, windowStart, windowEnd, period, emptyBars]);
 
-  // Filter category breakdown when a payment method is selected
-  const filteredCatBreakdown = useMemo(() => {
-    if (!selectedMethod) return catBreakdown;
-    const catMap = {};
-    filtered.forEach((t) => {
-      const pm = t.paymentMethod || "Cash";
-      let match = false;
-      if (selectedMethod === "Cash") match = pm === "Cash";
-      else if (selectedMethod === "Bank Transfer") match = pm === "Bank" || pm === "Bank Transfer";
-      else if (selectedMethod === "Credit Card") match = pm === "Credit Card";
-      else if (selectedMethod === "Debit Card") match = pm === "Debit Card";
+  // Calculate payment method stats (for selectedCategory or all transactions in current window)
+  const methodStats = useMemo(() => {
+    const targetTxns = selectedCat
+      ? filtered.filter((t) => (t.category || "Uncategorized") === selectedCat)
+      : filtered;
 
-      if (!match) return;
+    let cashInc = 0, bankInc = 0;
+    let cashExp = 0, bankExp = 0, creditExp = 0, debitExp = 0;
 
+    targetTxns.forEach((t) => {
       const amount = Number(t.amount) || 0;
       const isIncome = t.type === "Income";
-      const cat = t.category || "Uncategorized";
-      if (!catMap[cat]) catMap[cat] = { income: 0, expense: 0, txns: [] };
-      if (isIncome) catMap[cat].income += amount;
-      else catMap[cat].expense += amount;
-      catMap[cat].txns.push(t);
+      const method = t.paymentMethod || "Cash";
+      const isCash = method === "Cash";
+      const isBank = method === "Bank" || method === "Bank Transfer";
+      const isCredit = method === "Credit Card";
+      const isDebit = method === "Debit Card";
+
+      if (isIncome) {
+        if (isCash) cashInc += amount;
+        else if (isBank) bankInc += amount;
+      } else {
+        if (isCash) cashExp += amount;
+        else if (isBank) bankExp += amount;
+        else if (isCredit) creditExp += amount;
+        else if (isDebit) debitExp += amount;
+      }
     });
 
-    return Object.entries(catMap)
-      .map(([name, v]) => ({ name, ...v, net: v.income - v.expense }))
-      .sort((a, b) => (b.income + b.expense) - (a.income + a.expense));
-  }, [filtered, selectedMethod, catBreakdown]);
+    return { cashInc, cashExp, bankInc, bankExp, creditExp, debitExp, totalTx: targetTxns.length };
+  }, [filtered, selectedCat]);
 
   // ── navigation ───────────────────────────────────────────────────────────────
   const navigate = (dir) => {
+    setSelectedCat(null);
     const next = new Date(cursor);
     if (period === "day")   next.setDate(next.getDate() + dir);
     else if (period === "week") next.setDate(next.getDate() + dir * 7);
@@ -356,19 +361,30 @@ export default function SummaryView({ transactions }) {
                 </div>
               </div>
 
-              {/* ── PAYMENT METHODS BOARD (Interactive Selector) ── */}
+              {/* ── UNIFIED PAYMENT METHODS & CATEGORIES BOARD ── */}
               <div className="glass-card p-4 mb-5">
+                {/* Header with Selected Category Info & Reset Button */}
                 <div className="flex items-center justify-between mb-3 px-1">
-                  <div className="flex items-center gap-1.5">
-                    <Wallet size={13} className="text-emerald-400" />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Payment Methods • Tap to Filter Categories
-                    </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Wallet size={14} className="text-emerald-400" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                      Payment Breakdown
+                    </span>
+                    {selectedCat ? (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm flex items-center gap-1">
+                        <span>{selectedCat}</span>
+                        <span className="text-[9px] text-emerald-400/80 font-mono">({methodStats.totalTx} txns)</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700/80">
+                        All Categories
+                      </span>
+                    )}
                   </div>
-                  {selectedMethod && (
+                  {selectedCat && (
                     <button
                       type="button"
-                      onClick={() => setSelectedMethod(null)}
+                      onClick={() => setSelectedCat(null)}
                       className="text-[10px] font-bold bg-slate-800 text-slate-300 hover:text-white px-2.5 py-1 rounded-lg border border-slate-700 hover:bg-slate-700 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <X size={10} />
@@ -377,76 +393,62 @@ export default function SummaryView({ transactions }) {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                {/* 4 Payment Method Boxes (Cash, Bank, Credit, Debit) */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
                   {[
                     {
                       id: "Cash",
                       label: "Cash",
                       emoji: "💵",
-                      inc: totals.cashInc,
-                      exp: totals.cashExp,
+                      inc: methodStats.cashInc,
+                      exp: methodStats.cashExp,
                       isCard: false,
-                      activeStyles: "bg-emerald-500/20 border-emerald-400 ring-2 ring-emerald-400/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]",
-                      inactiveStyles: "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/15",
+                      bg: "bg-emerald-500/10 border-emerald-500/20",
                       textColor: "text-emerald-400",
-                      badgeColor: "bg-emerald-500/30 text-emerald-300 border-emerald-400/50",
                       dividerColor: "border-emerald-500/20",
                     },
                     {
-                      id: "Bank Transfer",
+                      id: "Bank",
                       label: "Bank",
                       emoji: "🏦",
-                      inc: totals.bankInc,
-                      exp: totals.bankExp,
+                      inc: methodStats.bankInc,
+                      exp: methodStats.bankExp,
                       isCard: false,
-                      activeStyles: "bg-sky-500/20 border-sky-400 ring-2 ring-sky-400/50 shadow-[0_0_15px_rgba(56,189,248,0.3)]",
-                      inactiveStyles: "bg-sky-500/10 border-sky-500/20 hover:border-sky-500/50 hover:bg-sky-500/15",
+                      bg: "bg-sky-500/10 border-sky-500/20",
                       textColor: "text-sky-400",
-                      badgeColor: "bg-sky-500/30 text-sky-300 border-sky-400/50",
                       dividerColor: "border-sky-500/20",
                     },
                     {
-                      id: "Credit Card",
+                      id: "Credit",
                       label: "Credit",
                       emoji: "💳",
                       inc: 0,
-                      exp: totals.creditExp,
+                      exp: methodStats.creditExp,
                       isCard: true,
-                      activeStyles: "bg-purple-500/20 border-purple-400 ring-2 ring-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]",
-                      inactiveStyles: "bg-purple-500/10 border-purple-500/20 hover:border-purple-500/50 hover:bg-purple-500/15",
+                      bg: "bg-purple-500/10 border-purple-500/20",
                       textColor: "text-purple-400",
-                      badgeColor: "bg-purple-500/30 text-purple-300 border-purple-400/50",
                       dividerColor: "border-purple-500/20",
                     },
                     {
-                      id: "Debit Card",
+                      id: "Debit",
                       label: "Debit",
                       emoji: "💳",
                       inc: 0,
-                      exp: totals.debitExp,
+                      exp: methodStats.debitExp,
                       isCard: true,
-                      activeStyles: "bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]",
-                      inactiveStyles: "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/15",
+                      bg: "bg-amber-500/10 border-amber-500/20",
                       textColor: "text-amber-400",
-                      badgeColor: "bg-amber-500/30 text-amber-300 border-amber-400/50",
                       dividerColor: "border-amber-500/20",
                     },
                   ].map((m) => {
-                    const isSelected = selectedMethod === m.id;
-                    const isAnySelected = selectedMethod !== null;
                     const mNet = m.inc - m.exp;
+                    const hasActivity = m.inc > 0 || m.exp > 0;
 
                     return (
-                      <button
+                      <div
                         key={m.id}
-                        type="button"
-                        onClick={() => setSelectedMethod(isSelected ? null : m.id)}
-                        className={`text-left rounded-xl p-3 transition-all relative border cursor-pointer ${
-                          isSelected
-                            ? `${m.activeStyles} scale-[1.02]`
-                            : isAnySelected
-                            ? "bg-slate-900/60 border-slate-800/80 opacity-50 hover:opacity-100 hover:border-slate-700"
-                            : m.inactiveStyles
+                        className={`rounded-xl p-3 border transition-all ${m.bg} ${
+                          hasActivity ? "opacity-100" : "opacity-60"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1.5 mb-2">
@@ -456,12 +458,10 @@ export default function SummaryView({ transactions }) {
                               {m.label}
                             </span>
                           </div>
-                          {isSelected ? (
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-0.5 ${m.badgeColor}`}>
-                              <Check size={9} /> Selected
-                            </span>
+                          {hasActivity ? (
+                            <span className="text-[9px] font-mono font-bold text-slate-300">Active</span>
                           ) : (
-                            <span className="text-[9px] text-slate-500 font-medium">Tap to view</span>
+                            <span className="text-[9px] text-slate-500 font-mono">Rs. 0</span>
                           )}
                         </div>
 
@@ -502,58 +502,70 @@ export default function SummaryView({ transactions }) {
                             </>
                           )}
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
-              </div>
 
-              {/* ── CATEGORY PILLS (Filtered by Selected Payment Method) ── */}
-              <div className="glass-card p-4 mb-5">
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Layers size={13} className="text-emerald-400" />
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                      Categories ({filteredCatBreakdown.length})
-                    </p>
-                    {selectedMethod && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                        {selectedMethod === "Bank Transfer" ? "Bank" : selectedMethod} Only
-                      </span>
-                    )}
+                {/* Divider with Guidance */}
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-800/80" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-slate-900/90 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border border-slate-800 rounded-full py-0.5">
+                      <Layers size={11} className="text-emerald-400" />
+                      Tap category to inspect payment methods
+                    </span>
                   </div>
                 </div>
 
-                {filteredCatBreakdown.length === 0 ? (
-                  <div className="py-6 text-center text-slate-500 text-xs">
-                    No transactions found for {selectedMethod ? (selectedMethod === "Bank Transfer" ? "Bank" : selectedMethod) : "this period"}.
+                {/* ── CATEGORIES (Income Categories & Expense Categories) ── */}
+                {catBreakdown.length === 0 ? (
+                  <div className="py-4 text-center text-slate-500 text-xs">
+                    No categories found in this period.
                   </div>
                 ) : (
-                  <>
+                  <div className="space-y-4 pt-1">
                     {/* Income Categories */}
-                    {filteredCatBreakdown.some((c) => c.income > 0) && (
-                      <div className="mb-3.5">
-                        <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                          Income Categories
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {filteredCatBreakdown
+                    {catBreakdown.some((c) => c.income > 0) && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2 px-0.5">
+                          <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            Income Categories
+                          </p>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {catBreakdown.filter((c) => c.income > 0).length} categories
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {catBreakdown
                             .filter((c) => c.income > 0)
                             .map((cat, i) => {
+                              const isSelected = selectedCat === cat.name;
                               const colors = ["#10b981", "#34d399", "#059669", "#14b8a6", "#06b6d4", "#0ea5e9"];
-                              const color = colors[i % colors.length];
+                              const dotColor = colors[i % colors.length];
                               return (
-                                <div
+                                <button
                                   key={cat.name}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 border border-slate-700/80 text-white shadow-sm"
+                                  type="button"
+                                  onClick={() => setSelectedCat(isSelected ? null : cat.name)}
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border cursor-pointer ${
+                                    isSelected
+                                      ? "bg-emerald-500/25 border-emerald-400 text-white shadow-[0_0_14px_rgba(16,185,129,0.4)] ring-2 ring-emerald-400/50 scale-105"
+                                      : selectedCat
+                                      ? "bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                                      : "bg-slate-900/80 border-slate-700/80 text-white hover:border-emerald-500/50 hover:bg-slate-800"
+                                  }`}
                                 >
-                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
                                   <span>{cat.name}</span>
                                   <span className="text-[10px] text-emerald-400 font-mono ml-1 font-bold">
                                     Rs. {Number(cat.income).toLocaleString("en-LK")}
                                   </span>
-                                </div>
+                                  {isSelected && <Check size={11} className="text-emerald-400 ml-0.5" />}
+                                </button>
                               );
                             })}
                         </div>
@@ -561,35 +573,50 @@ export default function SummaryView({ transactions }) {
                     )}
 
                     {/* Expense Categories */}
-                    {filteredCatBreakdown.some((c) => c.expense > 0) && (
+                    {catBreakdown.some((c) => c.expense > 0) && (
                       <div>
-                        <p className="text-[9px] font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                          Expense Categories
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {filteredCatBreakdown
+                        <div className="flex items-center justify-between mb-2 px-0.5">
+                          <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                            Expense Categories
+                          </p>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {catBreakdown.filter((c) => c.expense > 0).length} categories
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {catBreakdown
                             .filter((c) => c.expense > 0)
                             .map((cat, i) => {
+                              const isSelected = selectedCat === cat.name;
                               const colors = ["#ef4444", "#f97316", "#f59e0b", "#a855f7", "#ec4899", "#f43f5e"];
-                              const color = colors[i % colors.length];
+                              const dotColor = colors[i % colors.length];
                               return (
-                                <div
+                                <button
                                   key={cat.name}
-                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 border border-slate-700/80 text-white shadow-sm"
+                                  type="button"
+                                  onClick={() => setSelectedCat(isSelected ? null : cat.name)}
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border cursor-pointer ${
+                                    isSelected
+                                      ? "bg-red-500/25 border-red-400 text-white shadow-[0_0_14px_rgba(239,68,68,0.4)] ring-2 ring-red-400/50 scale-105"
+                                      : selectedCat
+                                      ? "bg-slate-900/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                                      : "bg-slate-900/80 border-slate-700/80 text-white hover:border-red-500/50 hover:bg-slate-800"
+                                  }`}
                                 >
-                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
                                   <span>{cat.name}</span>
                                   <span className="text-[10px] text-red-400 font-mono ml-1 font-bold">
                                     Rs. {Number(cat.expense).toLocaleString("en-LK")}
                                   </span>
-                                </div>
+                                  {isSelected && <Check size={11} className="text-red-400 ml-0.5" />}
+                                </button>
                               );
                             })}
                         </div>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
 
