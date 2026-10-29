@@ -19,7 +19,7 @@ const getDefaultForm = (defaultCategory = "") => {
   return {
     date: localDate,
     time: pad(now.getHours()) + ':' + pad(now.getMinutes()),
-    type: "Expense",
+    type: "Income",
     category: defaultCategory,
     amount: "",
     paymentMethod: "Cash",
