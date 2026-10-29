@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Wallet, Calendar, ChevronLeft, ChevronRight,
-  BarChart2, Layers, Clock, ArrowUpRight, ArrowDownRight, ChevronRight as ChevronRightIcon
+  BarChart2, Layers, Clock, ArrowUpRight, ArrowDownRight, ChevronRight as ChevronRightIcon,
+  Check, X
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -47,6 +48,7 @@ export default function SummaryView({ transactions }) {
   const [period, setPeriod]       = useState("week"); // "day" | "week" | "month"
   const [cursor, setCursor]       = useState(() => new Date());
   const [expandedCat, setExpandedCat] = useState(null);
+  const [selectedMethod, setSelectedMethod] = useState(null); // null = All, "Cash", "Bank Transfer", "Credit Card", "Debit Card"
 
   // ── window boundaries ────────────────────────────────────────────────────────
   const { windowStart, windowEnd, label, emptyBars } = useMemo(() => {
@@ -151,6 +153,34 @@ export default function SummaryView({ transactions }) {
       pieData: pie,
     };
   }, [transactions, windowStart, windowEnd, period, emptyBars]);
+
+  // Filter category breakdown when a payment method is selected
+  const filteredCatBreakdown = useMemo(() => {
+    if (!selectedMethod) return catBreakdown;
+    const catMap = {};
+    filtered.forEach((t) => {
+      const pm = t.paymentMethod || "Cash";
+      let match = false;
+      if (selectedMethod === "Cash") match = pm === "Cash";
+      else if (selectedMethod === "Bank Transfer") match = pm === "Bank" || pm === "Bank Transfer";
+      else if (selectedMethod === "Credit Card") match = pm === "Credit Card";
+      else if (selectedMethod === "Debit Card") match = pm === "Debit Card";
+
+      if (!match) return;
+
+      const amount = Number(t.amount) || 0;
+      const isIncome = t.type === "Income";
+      const cat = t.category || "Uncategorized";
+      if (!catMap[cat]) catMap[cat] = { income: 0, expense: 0, txns: [] };
+      if (isIncome) catMap[cat].income += amount;
+      else catMap[cat].expense += amount;
+      catMap[cat].txns.push(t);
+    });
+
+    return Object.entries(catMap)
+      .map(([name, v]) => ({ name, ...v, net: v.income - v.expense }))
+      .sort((a, b) => (b.income + b.expense) - (a.income + a.expense));
+  }, [filtered, selectedMethod, catBreakdown]);
 
   // ── navigation ───────────────────────────────────────────────────────────────
   const navigate = (dir) => {
@@ -300,60 +330,6 @@ export default function SummaryView({ transactions }) {
                 </div>
               </div>
 
-              {/* 4 Payment Methods (Cash, Bank, Credit Card, Debit Card) */}
-              <div className="glass-card p-4 mb-5">
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3">Payment Methods</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: "Cash", emoji: "💵", color: "emerald", inc: totals.cashInc, exp: totals.cashExp, isCard: false },
-                    { label: "Bank Transfer", emoji: "🏦", color: "sky", inc: totals.bankInc, exp: totals.bankExp, isCard: false },
-                    { label: "Credit Card", emoji: "💳", color: "purple", inc: 0, exp: totals.creditExp, isCard: true },
-                    { label: "Debit Card", emoji: "💳", color: "amber", inc: 0, exp: totals.debitExp, isCard: true },
-                  ].map(({ label: ml, emoji, color, inc: mInc, exp: mExp, isCard }) => {
-                    const mNet = mInc - mExp;
-                    return (
-                      <div key={ml} className={`bg-${color}-500/10 border border-${color}-500/20 rounded-xl p-3`}>
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <span className="text-sm">{emoji}</span>
-                          <span className={`text-[11px] font-semibold text-${color}-400 uppercase tracking-wider truncate`}>{ml}</span>
-                        </div>
-                        <div className="space-y-1">
-                          {!isCard ? (
-                            <>
-                              <div className="flex justify-between">
-                                <span className="text-[10px] text-slate-400">In</span>
-                                <span className="text-[10px] font-bold text-emerald-400 font-mono">Rs. {Number(mInc).toLocaleString("en-LK")}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-[10px] text-slate-400">Out</span>
-                                <span className="text-[10px] font-bold text-red-400 font-mono">Rs. {Number(mExp).toLocaleString("en-LK")}</span>
-                              </div>
-                              <div className={`border-t border-${color}-500/20 pt-1 flex justify-between`}>
-                                <span className="text-[10px] text-slate-300 font-medium">Net</span>
-                                <span className={`text-[10px] font-bold font-mono ${mNet >= 0 ? "text-emerald-300" : "text-red-300"}`}>
-                                  {mNet >= 0 ? "+" : "−"} Rs. {Number(Math.abs(mNet)).toLocaleString("en-LK")}
-                                </span>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex justify-between">
-                                <span className="text-[10px] text-slate-400">Total Spent</span>
-                                <span className={`text-[10px] font-bold font-mono text-${color}-300`}>Rs. {Number(mExp).toLocaleString("en-LK")}</span>
-                              </div>
-                              <div className={`border-t border-${color}-500/20 pt-1 flex justify-between`}>
-                                <span className="text-[10px] text-slate-400">Type</span>
-                                <span className={`text-[10px] font-semibold text-${color}-400`}>Card Expense</span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Bar Chart */}
               <div className="glass-card p-4 mb-5">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-4">{barLabel} Breakdown</p>
@@ -380,73 +356,242 @@ export default function SummaryView({ transactions }) {
                 </div>
               </div>
 
-              {/* Category Pills (Category names only: Income & Expense) */}
-              {catBreakdown.length > 0 && (
-                <div className="glass-card p-4 mb-5">
-                  <div className="flex items-center justify-between mb-3 px-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <Layers size={13} className="text-emerald-400" />
-                      Categories ({catBreakdown.length})
+              {/* ── PAYMENT METHODS BOARD (Interactive Selector) ── */}
+              <div className="glass-card p-4 mb-5">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center gap-1.5">
+                    <Wallet size={13} className="text-emerald-400" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Payment Methods • Tap to Filter Categories
                     </p>
                   </div>
-                  
-                  {/* Income Categories */}
-                  {catBreakdown.some(c => c.income > 0) && (
-                    <div className="mb-3.5">
-                      <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        Income Categories
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {catBreakdown.filter(c => c.income > 0).map((cat, i) => {
-                          const colors = ['#10b981', '#34d399', '#059669', '#14b8a6', '#06b6d4', '#0ea5e9'];
-                          const color = colors[i % colors.length];
-                          return (
-                            <div
-                              key={cat.name}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 border border-slate-700/80 text-white shadow-sm"
-                            >
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                              <span>{cat.name}</span>
-                              <span className="text-[10px] text-emerald-400 font-mono ml-1 font-bold">
-                                Rs. {Number(cat.income).toLocaleString("en-LK")}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Expense Categories */}
-                  {catBreakdown.some(c => c.expense > 0) && (
-                    <div>
-                      <p className="text-[9px] font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                        Expense Categories
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {catBreakdown.filter(c => c.expense > 0).map((cat, i) => {
-                          const colors = ['#ef4444', '#f97316', '#f59e0b', '#a855f7', '#ec4899', '#f43f5e'];
-                          const color = colors[i % colors.length];
-                          return (
-                            <div
-                              key={cat.name}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 border border-slate-700/80 text-white shadow-sm"
-                            >
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                              <span>{cat.name}</span>
-                              <span className="text-[10px] text-red-400 font-mono ml-1 font-bold">
-                                Rs. {Number(cat.expense).toLocaleString("en-LK")}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                  {selectedMethod && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMethod(null)}
+                      className="text-[10px] font-bold bg-slate-800 text-slate-300 hover:text-white px-2.5 py-1 rounded-lg border border-slate-700 hover:bg-slate-700 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <X size={10} />
+                      <span>Show All</span>
+                    </button>
                   )}
                 </div>
-              )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {
+                      id: "Cash",
+                      label: "Cash",
+                      emoji: "💵",
+                      inc: totals.cashInc,
+                      exp: totals.cashExp,
+                      isCard: false,
+                      activeStyles: "bg-emerald-500/20 border-emerald-400 ring-2 ring-emerald-400/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]",
+                      inactiveStyles: "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/15",
+                      textColor: "text-emerald-400",
+                      badgeColor: "bg-emerald-500/30 text-emerald-300 border-emerald-400/50",
+                      dividerColor: "border-emerald-500/20",
+                    },
+                    {
+                      id: "Bank Transfer",
+                      label: "Bank",
+                      emoji: "🏦",
+                      inc: totals.bankInc,
+                      exp: totals.bankExp,
+                      isCard: false,
+                      activeStyles: "bg-sky-500/20 border-sky-400 ring-2 ring-sky-400/50 shadow-[0_0_15px_rgba(56,189,248,0.3)]",
+                      inactiveStyles: "bg-sky-500/10 border-sky-500/20 hover:border-sky-500/50 hover:bg-sky-500/15",
+                      textColor: "text-sky-400",
+                      badgeColor: "bg-sky-500/30 text-sky-300 border-sky-400/50",
+                      dividerColor: "border-sky-500/20",
+                    },
+                    {
+                      id: "Credit Card",
+                      label: "Credit",
+                      emoji: "💳",
+                      inc: 0,
+                      exp: totals.creditExp,
+                      isCard: true,
+                      activeStyles: "bg-purple-500/20 border-purple-400 ring-2 ring-purple-400/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]",
+                      inactiveStyles: "bg-purple-500/10 border-purple-500/20 hover:border-purple-500/50 hover:bg-purple-500/15",
+                      textColor: "text-purple-400",
+                      badgeColor: "bg-purple-500/30 text-purple-300 border-purple-400/50",
+                      dividerColor: "border-purple-500/20",
+                    },
+                    {
+                      id: "Debit Card",
+                      label: "Debit",
+                      emoji: "💳",
+                      inc: 0,
+                      exp: totals.debitExp,
+                      isCard: true,
+                      activeStyles: "bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]",
+                      inactiveStyles: "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/15",
+                      textColor: "text-amber-400",
+                      badgeColor: "bg-amber-500/30 text-amber-300 border-amber-400/50",
+                      dividerColor: "border-amber-500/20",
+                    },
+                  ].map((m) => {
+                    const isSelected = selectedMethod === m.id;
+                    const isAnySelected = selectedMethod !== null;
+                    const mNet = m.inc - m.exp;
+
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setSelectedMethod(isSelected ? null : m.id)}
+                        className={`text-left rounded-xl p-3 transition-all relative border cursor-pointer ${
+                          isSelected
+                            ? `${m.activeStyles} scale-[1.02]`
+                            : isAnySelected
+                            ? "bg-slate-900/60 border-slate-800/80 opacity-50 hover:opacity-100 hover:border-slate-700"
+                            : m.inactiveStyles
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1.5 mb-2">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="text-sm">{m.emoji}</span>
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${m.textColor} truncate`}>
+                              {m.label}
+                            </span>
+                          </div>
+                          {isSelected ? (
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex items-center gap-0.5 ${m.badgeColor}`}>
+                              <Check size={9} /> Selected
+                            </span>
+                          ) : (
+                            <span className="text-[9px] text-slate-500 font-medium">Tap to view</span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          {!m.isCard ? (
+                            <>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-slate-400">In</span>
+                                <span className="font-bold text-emerald-400 font-mono">
+                                  Rs. {Number(m.inc).toLocaleString("en-LK")}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-slate-400">Out</span>
+                                <span className="font-bold text-red-400 font-mono">
+                                  Rs. {Number(m.exp).toLocaleString("en-LK")}
+                                </span>
+                              </div>
+                              <div className={`border-t ${m.dividerColor} pt-1 flex justify-between items-center text-[10px]`}>
+                                <span className="text-slate-300 font-medium">Net</span>
+                                <span className={`font-bold font-mono ${mNet >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                                  {mNet >= 0 ? "+" : "−"} Rs. {Number(Math.abs(mNet)).toLocaleString("en-LK")}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-slate-400">Spent</span>
+                                <span className={`font-bold font-mono ${m.textColor}`}>
+                                  Rs. {Number(m.exp).toLocaleString("en-LK")}
+                                </span>
+                              </div>
+                              <div className={`border-t ${m.dividerColor} pt-1 flex justify-between items-center text-[10px]`}>
+                                <span className="text-slate-400">Type</span>
+                                <span className={`font-semibold ${m.textColor}`}>Card Expense</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── CATEGORY PILLS (Filtered by Selected Payment Method) ── */}
+              <div className="glass-card p-4 mb-5">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Layers size={13} className="text-emerald-400" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Categories ({filteredCatBreakdown.length})
+                    </p>
+                    {selectedMethod && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        {selectedMethod === "Bank Transfer" ? "Bank" : selectedMethod} Only
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {filteredCatBreakdown.length === 0 ? (
+                  <div className="py-6 text-center text-slate-500 text-xs">
+                    No transactions found for {selectedMethod ? (selectedMethod === "Bank Transfer" ? "Bank" : selectedMethod) : "this period"}.
+                  </div>
+                ) : (
+                  <>
+                    {/* Income Categories */}
+                    {filteredCatBreakdown.some((c) => c.income > 0) && (
+                      <div className="mb-3.5">
+                        <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          Income Categories
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {filteredCatBreakdown
+                            .filter((c) => c.income > 0)
+                            .map((cat, i) => {
+                              const colors = ["#10b981", "#34d399", "#059669", "#14b8a6", "#06b6d4", "#0ea5e9"];
+                              const color = colors[i % colors.length];
+                              return (
+                                <div
+                                  key={cat.name}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 border border-slate-700/80 text-white shadow-sm"
+                                >
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                  <span>{cat.name}</span>
+                                  <span className="text-[10px] text-emerald-400 font-mono ml-1 font-bold">
+                                    Rs. {Number(cat.income).toLocaleString("en-LK")}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Expense Categories */}
+                    {filteredCatBreakdown.some((c) => c.expense > 0) && (
+                      <div>
+                        <p className="text-[9px] font-bold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                          Expense Categories
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {filteredCatBreakdown
+                            .filter((c) => c.expense > 0)
+                            .map((cat, i) => {
+                              const colors = ["#ef4444", "#f97316", "#f59e0b", "#a855f7", "#ec4899", "#f43f5e"];
+                              const color = colors[i % colors.length];
+                              return (
+                                <div
+                                  key={cat.name}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-900/80 border border-slate-700/80 text-white shadow-sm"
+                                >
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                  <span>{cat.name}</span>
+                                  <span className="text-[10px] text-red-400 font-mono ml-1 font-bold">
+                                    Rs. {Number(cat.expense).toLocaleString("en-LK")}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
 
             </>
           )}
