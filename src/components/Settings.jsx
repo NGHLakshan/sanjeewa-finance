@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { subscribeToCategories, addCategory } from "../services/categories";
-import { PlusCircle, Settings2, ChevronRight, TrendingUp, TrendingDown, KeyRound, Shield, Download, FileText, Layers, LogOut, Trash2 } from "lucide-react";
-import { clearAllTransactions } from "../services/transactions";
+import { PlusCircle, Settings2, ChevronRight, TrendingUp, TrendingDown, KeyRound, Shield, Download, FileText, Layers, LogOut } from "lucide-react";
 import { exportToCSV } from "../utils/export";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -22,30 +21,7 @@ export default function Settings({ transactions }) {
   const [exportMonth, setExportMonth] = useState("all");
   const [loading, setLoading] = useState(true);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
 
-  const handleClearAllTransactions = async () => {
-    if (!transactions || transactions.length === 0) {
-      toast("No test transactions to delete.", { icon: "ℹ️" });
-      return;
-    }
-    const confirmed = window.confirm(
-      `Are you sure you want to delete all ${transactions.length} test transactions?\n\nThis will permanently clear all test entries and reset all balances to Rs. 0 so you can hand the app to your customer.`
-    );
-    if (!confirmed) return;
-
-    setIsClearing(true);
-    const toastId = toast.loading("Clearing all test transactions...");
-    try {
-      const count = await clearAllTransactions();
-      toast.success(`Deleted ${count} test transactions! App is fresh & ready for customer.`, { id: toastId });
-    } catch (err) {
-      console.error("Error clearing transactions:", err);
-      toast.error("Failed to delete transactions. Check internet connection.", { id: toastId });
-    } finally {
-      setIsClearing(false);
-    }
-  };
   
   // PIN Lock states
   const [isPinEnabled, setIsPinEnabled] = useState(false);
@@ -266,29 +242,7 @@ export default function Settings({ transactions }) {
             </div>
           </div>
 
-          {/* Reset / Clear Test Data for Customer */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-red-500/10 border border-red-500/25">
-            <div>
-              <span className="text-white text-sm font-semibold flex items-center gap-1.5">
-                <Trash2 size={14} className="text-red-400" />
-                <span>Reset Test Data for Customer</span>
-              </span>
-              <span className="text-slate-400 text-xs block mt-0.5">
-                Permanently delete all {transactions?.length || 0} test transactions & reset balances to Rs. 0
-              </span>
-            </div>
-            
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              disabled={isClearing || !transactions || transactions.length === 0}
-              onClick={handleClearAllTransactions}
-              className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
-            >
-              <Trash2 size={13} className={isClearing ? "animate-spin" : ""} />
-              <span>{isClearing ? "Clearing..." : "Clear Test Data"}</span>
-            </motion.button>
-          </div>
+
         </div>
       </div>
 
