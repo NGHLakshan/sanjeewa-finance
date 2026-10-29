@@ -1,18 +1,175 @@
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="fav-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#022c22" />
-      <stop offset="60%" stop-color="#064e3b" />
-      <stop offset="100%" stop-color="#021c16" />
+    <!-- Background Luxury Dark Emerald & Obsidian Gradient -->
+    <radialGradient id="pro-bg" cx="50%" cy="20%" r="90%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="45%" stop-color="#022c22" />
+      <stop offset="85%" stop-color="#030c0a" />
+      <stop offset="100%" stop-color="#010605" />
+    </radialGradient>
+
+    <!-- Outer Bevel Glow -->
+    <linearGradient id="pro-border" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0.8" />
+      <stop offset="35%" stop-color="#10b981" stop-opacity="0.4" />
+      <stop offset="70%" stop-color="#047857" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.6" />
     </linearGradient>
-    <linearGradient id="fav-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#34d399" />
-      <stop offset="50%" stop-color="#10b981" />
+
+    <!-- Top Rim Specular Studio Light -->
+    <linearGradient id="pro-specular" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Upper Ribbon Gradient (Mint to Vivid Emerald) -->
+    <linearGradient id="ribbon-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7" />
+      <stop offset="40%" stop-color="#34d399" />
+      <stop offset="80%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Lower Ribbon Gradient (Emerald to Electric Cyan) -->
+    <linearGradient id="ribbon-bot" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#14b8a6" />
       <stop offset="100%" stop-color="#06b6d4" />
     </linearGradient>
+
+    <!-- 3D Ribbon Shadow (Ambient Occlusion) -->
+    <linearGradient id="ribbon-shadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#011f18" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#011f18" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Golden/Mint Shimmer Accent -->
+    <linearGradient id="gold-shimmer" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#6ee7b7" />
+      <stop offset="100%" stop-color="#ffffff" />
+    </linearGradient>
+
+    <!-- Neon Glow Filter -->
+    <filter id="pro-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Inner Shadow for depth -->
+    <filter id="inner-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feOffset dx="0" dy="3"/>
+      <feGaussianBlur stdDeviation="3" result="offset-blur"/>
+      <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
+      <feFlood flood-color="black" flood-opacity="0.6" result="color"/>
+      <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
   </defs>
-  <rect width="100" height="100" rx="28" fill="url(#fav-bg)" />
-  <rect x="2.5" y="2.5" width="95" height="95" rx="25.5" stroke="#10b981" stroke-opacity="0.5" stroke-width="3" />
-  <path d="M68 29 C68 23 60 19 50 19 C38 19 30 25 30 34 C30 45 42 47 52 50 C64 53 71 57 71 66 C71 75 62 81 50 81 C37 81 29 75 29 67" stroke="url(#fav-grad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M66 19 L77 19 L77 30" stroke="#6ee7b7" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- 1. Outer 3D Squircle Base -->
+  <rect width="120" height="120" rx="34" fill="url(#pro-bg)" />
+  
+  <!-- Outer metallic border -->
+  <rect x="2" y="2" width="116" height="116" rx="32" stroke="url(#pro-border)" stroke-width="2.5" />
+  
+  <!-- Top specular highlight -->
+  <rect x="4" y="4" width="112" height="56" rx="30" fill="url(#pro-specular)" />
+
+  <!-- Subtle Cyber Tech Grid / Radial Aura -->
+  <circle cx="60" cy="60" r="42" fill="#10b981" fill-opacity="0.06" filter="blur(8px)" />
+
+  <!-- 2. Lower Ribbon of "S" (Sweeps from center down to bottom left, then curves right) -->
+  <path
+    d="M52 56 
+       C64 56, 84 62, 84 76 
+       C84 90, 68 96, 52 96 
+       C34 96, 26 86, 26 78 
+       C26 74, 30 71, 35 71 
+       C40 71, 42 74, 44 77 
+       C46 81, 50 83, 53 83 
+       C59 83, 67 80, 67 75 
+       C67 70, 56 67, 46 65 
+       C36 63, 24 57, 24 45
+       L38 45
+       Z"
+    fill="none"
+  />
+
+  <!-- PRO DUAL-FACET FINTECH 'S' MONOGRAM -->
+  <!-- Layer 1: Ambient Glow behind S -->
+  <g filter="url(#pro-glow)" opacity="0.6">
+    <path
+      d="M78 36 C78 25 68 20 54 20 C38 20 28 28 28 40 C28 53 44 56 58 59 C72 62 80 67 80 78 C80 91 68 98 52 98 C36 98 26 90 26 80"
+      stroke="#10b981"
+      stroke-width="14"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+
+  <!-- Layer 2: Main Bottom Ribbon of S (Emerald to Cyan with 3D Bevel) -->
+  <path
+    d="M48 57 
+       C64 60 78 65 78 77 
+       C78 88 68 94 54 94 
+       C40 94 30 87 30 79"
+    stroke="url(#ribbon-bot)"
+    stroke-width="13"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Layer 3: Overlapping Shadow where Top Fold crosses -->
+  <ellipse cx="50" cy="56" rx="14" ry="7" fill="url(#ribbon-shadow)" transform="rotate(-15 50 56)" />
+
+  <!-- Layer 4: Upper Ribbon of S (Electric Mint with Top Specular Peak) -->
+  <path
+    d="M78 37 
+       C78 26 68 22 54 22 
+       C40 22 30 29 30 40 
+       C30 52 44 55 58 58"
+    stroke="url(#ribbon-top)"
+    stroke-width="13"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Layer 5: Inner 3D Light Streak along the S flow -->
+  <path
+    d="M72 32 C70 27 63 24 54 24 C43 24 34 29 34 38 C34 47 45 50 56 53"
+    stroke="#ffffff"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-opacity="0.65"
+  />
+
+  <path
+    d="M52 61 C64 64 74 68 74 76 C74 83 67 89 54 89 C43 89 36 84 34 79"
+    stroke="#a7f3d0"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-opacity="0.5"
+  />
+
+  <!-- Layer 6: Dynamic Fintech Growth Arrow Crest at top-right -->
+  <g transform="translate(1, -1)">
+    <!-- Upward arrow triangle -->
+    <path
+      d="M74 21 L89 21 C90.5 21 91 22.5 90 23.5 L82 31.5 C81 32.5 79.5 32 79.5 30.5 L79.5 24 L74 24 C72.5 24 72.5 21 74 21 Z"
+      fill="url(#gold-shimmer)"
+      filter="drop-shadow(0 2px 6px rgba(16,185,129,0.7))"
+    />
+  </g>
+
+  <!-- Layer 7: Diamond Shimmer Core at center fold -->
+  <path
+    d="M57 58.5 L60 55 L63 58.5 L60 62 Z"
+    fill="#ffffff"
+    filter="drop-shadow(0 0 4px #34d399)"
+  />
 </svg>
