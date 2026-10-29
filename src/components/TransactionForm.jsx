@@ -28,6 +28,12 @@ const getDefaultForm = (defaultCategory = "") => {
 };
 
 export default function TransactionForm({ onDirtyChange }) {
+  // Always scroll to top on mount
+  useEffect(() => {
+    const scroller = document.getElementById("main-scroller");
+    if (scroller) scroller.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const [form, setForm] = useState(() => getDefaultForm(""));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);

@@ -68,8 +68,35 @@ export default function App({ onReady }) {
     setTab(newTab);
   };
 
+  // Scroll to top whenever tab changes so any new screen starts right from the top
+  useEffect(() => {
+    const resetScroll = () => {
+      const scroller = document.getElementById("main-scroller");
+      if (scroller) {
+        scroller.scrollTop = 0;
+      }
+      window.scrollTo(0, 0);
+    };
+
+    resetScroll();
+    const rafId = requestAnimationFrame(resetScroll);
+    const timeoutId = setTimeout(resetScroll, 60);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timeoutId);
+    };
+  }, [tab]);
+
   const handleTabChange = (newTab) => {
-    if (tab === newTab) return;
+    if (tab === newTab) {
+      const scroller = document.getElementById("main-scroller");
+      if (scroller) {
+        scroller.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     if (tab === "form" && isFormDirty) {
       setPendingTab(newTab);
       setShowDiscardConfirm(true);
@@ -299,7 +326,7 @@ export default function App({ onReady }) {
 
       {/* Main Content */}
       <main className="flex-1 overflow-hidden relative">
-        <div className="h-full w-full overflow-y-auto pb-24" id="main-scroller">
+        <div key={tab} className="h-full w-full overflow-y-auto pb-24" id="main-scroller">
           {tab === "form" ? (
             <TransactionForm onDirtyChange={setIsFormDirty} />
           ) : tab === "settings" ? (

@@ -45,6 +45,12 @@ const formatYearLabel  = (d) => d.getFullYear().toString();
 
 // ── main component ────────────────────────────────────────────────────────────
 export default function SummaryView({ transactions }) {
+  // Always scroll to top on mount
+  useEffect(() => {
+    const scroller = document.getElementById("main-scroller");
+    if (scroller) scroller.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const [period, setPeriod]       = useState("week"); // "day" | "week" | "month"
   const [cursor, setCursor]       = useState(() => new Date());
   const [expandedCat, setExpandedCat] = useState(null);

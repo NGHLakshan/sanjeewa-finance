@@ -11,6 +11,12 @@ import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 
 export default function Settings({ transactions }) {
+  // Always scroll to top on mount
+  useEffect(() => {
+    const scroller = document.getElementById("main-scroller");
+    if (scroller) scroller.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }, []);
   const [categories, setCategories] = useState([]);
   const [exportMonth, setExportMonth] = useState("all");
   const [loading, setLoading] = useState(true);
