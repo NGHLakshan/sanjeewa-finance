@@ -170,7 +170,7 @@ export default function TransactionForm({ onDirtyChange }) {
           <div className="form-group">
             <label className="form-label">Transaction Type</label>
             <div className="grid grid-cols-2 gap-3 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
-              {["Expense", "Income"].map((t) => {
+              {["Income", "Expense"].map((t) => {
                 const isSelected = form.type === t;
                 return (
                   <button

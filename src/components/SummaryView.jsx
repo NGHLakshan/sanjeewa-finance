@@ -443,13 +443,37 @@ export default function SummaryView({ transactions }) {
                   ].map((m) => {
                     const mNet = m.inc - m.exp;
                     const hasActivity = m.inc > 0 || m.exp > 0;
+                    const isHighlighted = selectedCat && hasActivity;
+
+                    const highlightMap = {
+                      Cash: {
+                        card: "bg-emerald-500/25 border-emerald-400 ring-2 ring-emerald-400/60 shadow-[0_0_22px_rgba(16,185,129,0.45)] scale-[1.02]",
+                        badge: "bg-emerald-400 text-slate-950 font-black shadow-[0_0_10px_rgba(16,185,129,0.7)]",
+                      },
+                      Bank: {
+                        card: "bg-sky-500/25 border-sky-400 ring-2 ring-sky-400/60 shadow-[0_0_22px_rgba(56,189,248,0.45)] scale-[1.02]",
+                        badge: "bg-sky-400 text-slate-950 font-black shadow-[0_0_10px_rgba(56,189,248,0.7)]",
+                      },
+                      Credit: {
+                        card: "bg-purple-500/25 border-purple-400 ring-2 ring-purple-400/60 shadow-[0_0_22px_rgba(168,85,247,0.45)] scale-[1.02]",
+                        badge: "bg-purple-400 text-slate-950 font-black shadow-[0_0_10px_rgba(168,85,247,0.7)]",
+                      },
+                      Debit: {
+                        card: "bg-amber-500/25 border-amber-400 ring-2 ring-amber-400/60 shadow-[0_0_22px_rgba(245,158,11,0.45)] scale-[1.02]",
+                        badge: "bg-amber-400 text-slate-950 font-black shadow-[0_0_10px_rgba(245,158,11,0.7)]",
+                      },
+                    };
+
+                    const cardStyles = isHighlighted
+                      ? highlightMap[m.id].card
+                      : selectedCat && !hasActivity
+                      ? "opacity-30 bg-slate-900/30 border-slate-800/60 scale-[0.98]"
+                      : `${m.bg} ${hasActivity ? "opacity-100" : "opacity-60"}`;
 
                     return (
                       <div
                         key={m.id}
-                        className={`rounded-xl p-3 border transition-all ${m.bg} ${
-                          hasActivity ? "opacity-100" : "opacity-60"
-                        }`}
+                        className={`rounded-xl p-3 border transition-all duration-300 ${cardStyles}`}
                       >
                         <div className="flex items-center justify-between gap-1.5 mb-2">
                           <div className="flex items-center gap-1.5 truncate">
@@ -458,7 +482,11 @@ export default function SummaryView({ transactions }) {
                               {m.label}
                             </span>
                           </div>
-                          {hasActivity ? (
+                          {isHighlighted ? (
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${highlightMap[m.id].badge}`}>
+                              <Check size={8} className="stroke-[3]" /> Active
+                            </span>
+                          ) : hasActivity ? (
                             <span className="text-[9px] font-mono font-bold text-slate-300">Active</span>
                           ) : (
                             <span className="text-[9px] text-slate-500 font-mono">Rs. 0</span>
@@ -561,9 +589,6 @@ export default function SummaryView({ transactions }) {
                                 >
                                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
                                   <span>{cat.name}</span>
-                                  <span className="text-[10px] text-emerald-400 font-mono ml-1 font-bold">
-                                    Rs. {Number(cat.income).toLocaleString("en-LK")}
-                                  </span>
                                   {isSelected && <Check size={11} className="text-emerald-400 ml-0.5" />}
                                 </button>
                               );
@@ -606,9 +631,6 @@ export default function SummaryView({ transactions }) {
                                 >
                                   <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
                                   <span>{cat.name}</span>
-                                  <span className="text-[10px] text-red-400 font-mono ml-1 font-bold">
-                                    Rs. {Number(cat.expense).toLocaleString("en-LK")}
-                                  </span>
                                   {isSelected && <Check size={11} className="text-red-400 ml-0.5" />}
                                 </button>
                               );
