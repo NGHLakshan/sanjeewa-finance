@@ -9,6 +9,8 @@ import {
   onSnapshot,
   Timestamp,
   setDoc,
+  getDocs,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import toast from "react-hot-toast";
@@ -122,3 +124,25 @@ export const subscribeToTransactions = (callback) => {
   });
 };
 
+
+/**
+ * Permanently delete all transactions from Firestore (useful for customer handoff).
+ */
+export const clearAllTransactions = async () => {
+  const querySnapshot = await getDocs(collection(db, COLLECTION));
+  if (querySnapshot.empty) return 0;
+
+  const docs = querySnapshot.docs;
+  const chunks = [];
+  for (let i = 0; i < docs.length; i += 400) {
+    chunks.push(docs.slice(i, i + 400));
+  }
+
+  for (const chunk of chunks) {
+    const batch = writeBatch(db);
+    chunk.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  return docs.length;
+};
