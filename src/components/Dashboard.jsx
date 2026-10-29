@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { subscribeToTransactions } from "../services/transactions";
 import { subscribeToCategories, addCategory, updateCategory, deleteCategory } from "../services/categories";
-import { TrendingUp, TrendingDown, Wallet, Calendar, Filter, PlusCircle, Building2, X, Settings2, Check, Trash2, ChevronRight, ArrowLeft, Layers, Pencil, Clock, CreditCard, Banknote } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Calendar, Filter, PlusCircle, Building2, X, Settings2, Check, Trash2, ChevronLeft, ChevronRight, ArrowLeft, Layers, Pencil, Clock, CreditCard, Banknote } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from "recharts";
 import CategoryManagerModal from "./CategoryManagerModal";
@@ -94,26 +94,46 @@ const renderPaymentBadge = (method) => {
   return <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-sky-500/15 text-sky-400 border-sky-500/30 shrink-0">🏦 Bank</span>;
 };
 
-// ── Date-grouped transaction list renderer ────────────────────────────────────
-// Groups a sorted array of transactions by calendar date and renders them with
-// a date-header row (e.g. "Wednesday • 15 Oct") + daily net, limited to `limit`
-// items, with a "See More" button that calls `onMore` to load the next 10.
-const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No transactions found.", nextLabel = "Next" }) => {
-  if (txList.length === 0) {
+// ── Date-grouped transaction list renderer with Page-by-Page Pagination ──────
+// Displays transactions in pages of 10 items. Groups the page's transactions by calendar
+// date with date headers + daily net. When Next/Prev/Page # is clicked, previous transactions
+// are hidden and the selected page is shown.
+const DateGroupedTxList = ({
+  txList,
+  pageSize = 10,
+  limit,
+  onMore,
+  onEdit,
+  emptyLabel = "No transactions found."
+}) => {
+  const [page, setPage] = useState(1);
+  const containerRef = useRef(null);
+
+  // Reset to first page when source list changes
+  useEffect(() => {
+    setPage(1);
+  }, [txList]);
+
+  if (!txList || txList.length === 0) {
     return (
       <div className="glass-card p-6 text-center text-slate-500 text-sm">{emptyLabel}</div>
     );
   }
 
-  // Only render up to `limit` items
-  const visible = txList.slice(0, limit);
+  const effectivePageSize = 10;
+  const totalPages = Math.ceil(txList.length / effectivePageSize) || 1;
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+
+  const startIndex = (currentPage - 1) * effectivePageSize;
+  const endIndex = Math.min(startIndex + effectivePageSize, txList.length);
+  const visible = txList.slice(startIndex, endIndex);
 
   // Bucket visible txns by ISO date key, preserving newest-first order
   const buckets = {};
   const order = [];
   visible.forEach((t) => {
     const d = t.date instanceof Date ? t.date : new Date(t.date);
-    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     if (!buckets[key]) {
       buckets[key] = { date: d, txns: [] };
       order.push(key);
@@ -121,10 +141,31 @@ const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No tra
     buckets[key].txns.push(t);
   });
 
-  const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  // Helper for generating page numbers (1, 2, 3...)
+  const getPageNumbers = () => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 3) {
+      return [1, 2, 3, 4, "...", totalPages];
+    }
+    if (currentPage >= totalPages - 2) {
+      return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+  };
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  };
 
   return (
-    <div className="space-y-4">
+    <div ref={containerRef} className="space-y-4">
       {order.map((key) => {
         const { date, txns } = buckets[key];
         const dayName = DAY_NAMES[date.getDay()];
@@ -136,10 +177,10 @@ const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No tra
             <div className="flex items-center justify-between mb-2 px-1">
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">{dayName}</span>
-                <span className="text-[10px] text-slate-500 font-medium">&bull; {dateLabel}</span>
+                <span className="text-[10px] text-slate-500 font-medium">• {dateLabel}</span>
               </div>
               <span className={`text-[10px] font-bold font-mono ${dayNet >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                {dayNet >= 0 ? "+" : "&#8722;"} Rs.&amp;nbsp;{Number(Math.abs(dayNet)).toLocaleString("en-LK")}
+                {dayNet >= 0 ? "+" : "−"} Rs. {Number(Math.abs(dayNet)).toLocaleString("en-LK")}
               </span>
             </div>
             {/* Transaction rows for this date */}
@@ -162,11 +203,11 @@ const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No tra
                         <p className="text-white font-bold text-sm truncate max-w-[200px] sm:max-w-xs">
                           {t.subCategory || t.category || "General"}
                         </p>
-                        {t.description && <span className="text-[11px] text-slate-400 truncate max-w-[140px]">&bull; {t.description}</span>}
+                        {t.description && <span className="text-[11px] text-slate-400 truncate max-w-[140px]">• {t.description}</span>}
                       </div>
                       <div className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
                         {renderPaymentBadge(t.paymentMethod)}
-                        {txTime && (<><span className="text-slate-600">&bull;</span><span className="font-mono text-slate-300 text-[11px] whitespace-nowrap flex items-center gap-1"><Clock size={11} className="text-slate-400 shrink-0"/>{txTime}</span></>)}
+                        {txTime && (<><span className="text-slate-600">•</span><span className="font-mono text-slate-300 text-[11px] whitespace-nowrap flex items-center gap-1"><Clock size={11} className="text-slate-400 shrink-0"/>{txTime}</span></>)}
                       </div>
                       {t.description && (
                         <p className="text-[11px] text-slate-400 mt-1 flex items-start gap-1">
@@ -178,7 +219,7 @@ const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No tra
                     </div>
                     <div className="shrink-0 flex items-center gap-2">
                       <span className={`text-sm font-bold font-mono whitespace-nowrap ${isIncome ? "text-emerald-400" : "text-red-400"}`}>
-                        {isIncome ? "+" : "&#8722;"} Rs.&amp;nbsp;{Number(t.amount).toLocaleString("en-LK")}
+                        {isIncome ? "+" : "−"} Rs. {Number(t.amount).toLocaleString("en-LK")}
                       </span>
                       <div className="p-1.5 rounded-lg text-slate-500 group-hover:text-slate-300 transition-colors"><Pencil size={13}/></div>
                     </div>
@@ -189,11 +230,74 @@ const DateGroupedTxList = ({ txList, limit, onMore, onEdit, emptyLabel = "No tra
           </div>
         );
       })}
-      {txList.length > limit && (
-        <button onClick={onMore} className="w-full mt-2 py-3 rounded-xl border border-slate-700/80 bg-slate-800/70 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm hover:border-slate-500 cursor-pointer">
-          <span>{nextLabel}</span>
-          <span className="text-slate-400 font-mono">({txList.length - limit} more)</span>
-        </button>
+
+      {/* ── Page-by-Page Pagination Controls ── */}
+      {totalPages > 1 && (
+        <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+          <div className="text-[11px] text-slate-400 font-medium">
+            Showing <span className="text-slate-200 font-mono font-bold">{startIndex + 1}</span>–<span className="text-slate-200 font-mono font-bold">{endIndex}</span> of <span className="text-slate-200 font-mono font-bold">{txList.length}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+            {/* Previous Button */}
+            <button
+              type="button"
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
+                currentPage === 1
+                  ? "border-slate-800/60 bg-slate-900/40 text-slate-600 cursor-not-allowed"
+                  : "border-slate-700/80 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white hover:border-emerald-500/50 shadow-sm cursor-pointer"
+              }`}
+            >
+              <ChevronLeft size={13} />
+              <span>Previous</span>
+            </button>
+
+            {/* Page number buttons */}
+            <div className="flex items-center gap-1">
+              {getPageNumbers().map((item, idx) => {
+                if (item === "...") {
+                  return (
+                    <span key={`dots-${idx}`} className="px-1.5 py-1 text-slate-500 text-xs font-mono select-none">
+                      ...
+                    </span>
+                  );
+                }
+                const isActive = item === currentPage;
+                return (
+                  <button
+                    key={`page-${item}`}
+                    type="button"
+                    onClick={() => handlePageChange(item)}
+                    className={`min-w-[32px] h-8 rounded-lg text-xs font-mono font-bold transition-all flex items-center justify-center border ${
+                      isActive
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
+                        : "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 cursor-pointer"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Next Button */}
+            <button
+              type="button"
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
+                currentPage === totalPages
+                  ? "border-slate-800/60 bg-slate-900/40 text-slate-600 cursor-not-allowed"
+                  : "border-slate-700/80 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white hover:border-emerald-500/50 shadow-sm cursor-pointer"
+              }`}
+            >
+              <span>Next</span>
+              <ChevronRight size={13} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -851,7 +955,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
               <div className="flex items-center gap-2 mb-1.5">
                 <p className="text-white/80 text-xs font-bold uppercase tracking-widest drop-shadow-sm">Net Balance</p>
                 <span className="text-[10px] bg-black/25 text-white font-extrabold px-2.5 py-0.5 rounded-full border border-white/20 shadow-inner backdrop-blur-md tracking-wider">
-                  Cash &bull; Bank &bull; Cards
+                  Cash • Bank • Cards
                 </span>
               </div>
               <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-mono drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
@@ -1384,7 +1488,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                       )}
                     </h2>
                     <p className="text-xs text-slate-400 truncate flex items-center gap-1.5">
-                      <span className="text-emerald-400 font-medium">Cash &bull; Bank &bull; Cards</span>
+                      <span className="text-emerald-400 font-medium">Cash • Bank • Cards</span>
                       <span className="w-1 h-1 rounded-full bg-slate-600" />
                       <span>{selectedMonth}</span>
                     </p>
@@ -1420,7 +1524,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest">Total Net Balance</p>
                       <span className="text-[10px] bg-white/20 text-white font-semibold px-2 py-0.5 rounded-full border border-white/20 tracking-wider">
-                        Cash &bull; Bank &bull; Cards
+                        Cash • Bank • Cards
                       </span>
                     </div>
                     <p className="text-3xl font-bold text-white tracking-tight mb-4">
