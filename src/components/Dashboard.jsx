@@ -316,7 +316,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
-export default function Dashboard({ onNewEntry, transactions: propTransactions, initialTransactions = [] }) {
+export default function Dashboard({ onNewEntry, transactions: propTransactions, initialTransactions = [], theme = "dark" }) {
   const [localTransactions, setLocalTransactions] = useState(initialTransactions);
   const transactions = propTransactions !== undefined ? propTransactions : localTransactions;
   const [loading, setLoading] = useState(() => (propTransactions ? false : initialTransactions.length === 0));

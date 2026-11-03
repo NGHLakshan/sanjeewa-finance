@@ -14,18 +14,32 @@
   }
 
   body {
-    @apply bg-slate-950 text-white antialiased;
+    @apply antialiased;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     overscroll-behavior: none;
     user-select: none;
     -webkit-user-select: none;
-    background-color: #030712;
+    /* Softened Cyber Slate Navy (Comfortable, not pitch-black) */
+    background-color: #0b1120;
+    color: #ffffff;
     background-image: 
-      radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.14), transparent 35%),
-      radial-gradient(circle at 85% 20%, rgba(6, 182, 212, 0.12), transparent 35%),
-      radial-gradient(circle at 50% 75%, rgba(139, 92, 246, 0.09), transparent 40%),
-      radial-gradient(circle at 85% 70%, rgba(16, 185, 129, 0.08), transparent 30%);
+      radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.12), transparent 38%),
+      radial-gradient(circle at 85% 20%, rgba(6, 182, 212, 0.10), transparent 38%),
+      radial-gradient(circle at 50% 75%, rgba(139, 92, 246, 0.08), transparent 42%),
+      radial-gradient(circle at 85% 70%, rgba(16, 185, 129, 0.07), transparent 35%);
     background-attachment: fixed;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  /* ── High-End Clean Light Theme ── */
+  html.light, body.light {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    background-image: 
+      radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.07), transparent 45%),
+      radial-gradient(circle at 85% 20%, rgba(6, 182, 212, 0.07), transparent 45%),
+      radial-gradient(circle at 50% 75%, rgba(99, 102, 241, 0.05), transparent 48%),
+      radial-gradient(circle at 85% 70%, rgba(16, 185, 129, 0.05), transparent 40%) !important;
   }
 
   input, textarea, select, [contenteditable] {
@@ -186,4 +200,175 @@
     opacity: 0 !important;
     pointer-events: none !important;
   }
+}
+
+
+/* ── COMPREHENSIVE LIGHT THEME RULES ── */
+body.light .glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+  border-top: 1px solid rgba(255, 255, 255, 1) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 
+    0 10px 25px -5px rgba(15, 23, 42, 0.06),
+    0 4px 6px -2px rgba(15, 23, 42, 0.03),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
+  color: #0f172a !important;
+}
+
+body.light .glass-card:hover {
+  border-color: rgba(203, 213, 225, 1) !important;
+  box-shadow: 
+    0 14px 28px -6px rgba(15, 23, 42, 0.09),
+    0 4px 10px -2px rgba(16, 185, 129, 0.12),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 1) !important;
+}
+
+body.light .glass-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.8) !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Light theme background overrides */
+body.light .bg-slate-950,
+body.light .bg-slate-950\/80 {
+  background-color: #f1f5f9 !important;
+}
+
+body.light .bg-slate-900,
+body.light .bg-slate-900\/90,
+body.light .bg-slate-900\/80,
+body.light .bg-slate-900\/70,
+body.light .bg-slate-900\/60,
+body.light .bg-slate-900\/50,
+body.light .bg-slate-900\/40 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body.light .bg-slate-800,
+body.light .bg-slate-800\/80,
+body.light .bg-slate-800\/70,
+body.light .bg-slate-800\/60,
+body.light .bg-slate-800\/50,
+body.light .bg-slate-800\/40 {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+body.light .border-slate-800,
+body.light .border-slate-800\/80,
+body.light .border-slate-800\/60,
+body.light .border-slate-800\/50,
+body.light .border-slate-700,
+body.light .border-slate-700\/80,
+body.light .border-slate-700\/60,
+body.light .border-slate-700\/50 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Text color adaptations */
+body.light h1:not([class*="gradient"]):not([class*="from-"]),
+body.light h2:not([class*="gradient"]):not([class*="from-"]),
+body.light h3:not([class*="gradient"]):not([class*="from-"]),
+body.light h4:not([class*="gradient"]):not([class*="from-"]) {
+  color: #0f172a;
+}
+
+body.light .text-white:not([class*="bg-gradient"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="from-"]):not([class*="btn-"]):not([class*="btn3d"]):not(.keep-white) {
+  color: #0f172a !important;
+}
+
+body.light [class*="bg-gradient"] .text-white,
+body.light [class*="from-emerald"] .text-white,
+body.light [class*="from-red"] .text-white,
+body.light .btn-3d-emerald,
+body.light .btn-3d-emerald * {
+  color: #ffffff !important;
+}
+
+body.light .text-slate-100,
+body.light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+body.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+body.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+body.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Form inputs in light mode */
+body.light .form-input {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 0 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+body.light .form-input:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+
+body.light .form-label {
+  color: #334155 !important;
+}
+
+body.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+body.light input[type='date']::-webkit-calendar-picker-indicator {
+  filter: none !important;
+}
+
+body.light input[type='time']::-webkit-calendar-picker-indicator {
+  filter: none !important;
+}
+
+/* Payment cards tinted in light mode */
+body.light [class*="to-emerald-950"] {
+  background: linear-gradient(145deg, #ffffff 0%, #ecfdf5 100%) !important;
+  border-color: #a7f3d0 !important;
+  box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.12), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+}
+
+body.light [class*="to-sky-950"] {
+  background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%) !important;
+  border-color: #bae6fd !important;
+  box-shadow: 0 8px 20px -4px rgba(56, 189, 248, 0.12), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+}
+
+body.light [class*="to-purple-950"] {
+  background: linear-gradient(145deg, #ffffff 0%, #faf5ff 100%) !important;
+  border-color: #e9d5ff !important;
+  box-shadow: 0 8px 20px -4px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+}
+
+body.light [class*="to-amber-950"] {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%) !important;
+  border-color: #fde68a !important;
+  box-shadow: 0 8px 20px -4px rgba(245, 158, 11, 0.12), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+}
+
+/* Recharts Tooltips and Grids in Light Mode */
+body.light .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1) !important;
+  border-radius: 12px !important;
+}
+
+body.light .recharts-cartesian-grid line {
+  stroke: #e2e8f0 !important;
 }

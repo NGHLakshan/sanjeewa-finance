@@ -44,7 +44,7 @@ const formatMonthLabel = (d) => d.toLocaleDateString("en-LK", { month: "long", y
 const formatYearLabel  = (d) => d.getFullYear().toString();
 
 // ── main component ────────────────────────────────────────────────────────────
-export default function SummaryView({ transactions }) {
+export default function SummaryView({ transactions, theme = "dark" }) {
   // Always scroll to top on mount
   useEffect(() => {
     const scroller = document.getElementById("main-scroller");
@@ -347,14 +347,18 @@ export default function SummaryView({ transactions }) {
                 <div className="h-40">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={barChartData} barGap={2} barCategoryGap="25%">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                      <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 9 }} axisLine={false} tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={theme === "light" ? "#e2e8f0" : "#1e293b"} vertical={false} />
+                      <XAxis dataKey="label" tick={{ fill: theme === "light" ? "#475569" : "#64748b", fontSize: 9 }} axisLine={false} tickLine={false} />
                       <YAxis hide />
                       <Tooltip
                         formatter={(v) => formatCurrency(v)}
-                        contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", color: "#fff", fontSize: "11px" }}
-                        itemStyle={{ color: "#fff" }}
-                        cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                        contentStyle={
+                          theme === "light"
+                            ? { backgroundColor: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "12px", color: "#0f172a", fontSize: "11px", boxShadow: "0 8px 20px -4px rgba(0,0,0,0.08)" }
+                            : { backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", color: "#fff", fontSize: "11px" }
+                        }
+                        itemStyle={{ color: theme === "light" ? "#0f172a" : "#fff" }}
+                        cursor={{ fill: theme === "light" ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.03)" }}
                       />
                       <Bar dataKey="income"  fill="#10b981" radius={[4,4,0,0]} maxBarSize={20} />
                       <Bar dataKey="expense" fill="#ef4444" radius={[4,4,0,0]} maxBarSize={20} />

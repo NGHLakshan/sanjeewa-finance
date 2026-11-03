@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { PlusCircle, LayoutDashboard, Settings2, Lock, BarChart2, Wallet, AlertTriangle } from "lucide-react";
+import { PlusCircle, LayoutDashboard, Settings2, Lock, BarChart2, Wallet, AlertTriangle, Sun, Moon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { onAuthStateChanged } from "firebase/auth";
@@ -24,6 +24,25 @@ const TABS = [
 
 export default function App({ onReady }) {
   const [tab, setTab] = useState("dashboard");
+  const [theme, setTheme] = useState(() => localStorage.getItem("app_theme") || "dark");
+
+  useEffect(() => {
+    localStorage.setItem("app_theme", theme);
+    const root = document.documentElement;
+    if (theme === "light") {
+      root.classList.add("light");
+      root.classList.remove("dark");
+      document.body.classList.add("light");
+      document.body.classList.remove("dark");
+    } else {
+      root.classList.add("dark");
+      root.classList.remove("light");
+      document.body.classList.add("dark");
+      document.body.classList.remove("light");
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   const [isLocked, setIsLocked] = useState(() => !!localStorage.getItem("app_pin"));
   const [transactions, setTransactions] = useState([]);
   const [user, setUser] = useState(() => auth.currentUser);
@@ -245,7 +264,7 @@ export default function App({ onReady }) {
   }
 
   return (
-    <div className="h-[100dvh] w-screen bg-slate-950 flex flex-col overflow-hidden relative">
+    <div className={`h-[100dvh] w-screen flex flex-col overflow-hidden relative transition-colors duration-300 ${theme === "light" ? "bg-slate-100 text-slate-900" : "bg-[#0b1120] text-white"}`}>
       {/* 3D Cyber Ambient Glow Orbs */}
       <div className="absolute -top-24 left-1/4 w-[480px] h-[480px] bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-transparent rounded-full blur-[130px] pointer-events-none" />
       <div className="absolute top-1/3 -right-20 w-[420px] h-[420px] bg-gradient-to-bl from-cyan-500/12 via-sky-500/8 to-transparent rounded-full blur-[120px] pointer-events-none" />
@@ -308,6 +327,24 @@ export default function App({ onReady }) {
             </span>
           </div>
 
+          {/* Theme Switcher Toggle (Light / Dark) */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all cursor-pointer ${
+              theme === "light"
+                ? "bg-slate-200/90 hover:bg-slate-300 border-slate-300/80 text-amber-600 shadow-sm"
+                : "bg-slate-800/60 hover:bg-slate-700/80 border-slate-700/60 text-amber-400"
+            }`}
+            title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+          >
+            {theme === "light" ? (
+              <Moon size={15} className="text-slate-800 hover:-rotate-12 transition-transform" />
+            ) : (
+              <Sun size={15} className="text-amber-400 hover:rotate-45 transition-transform" />
+            )}
+          </button>
+
           {/* Quick Lock Button if PIN is set */}
           {localStorage.getItem("app_pin") && (
             <button
@@ -330,14 +367,15 @@ export default function App({ onReady }) {
           {tab === "form" ? (
             <TransactionForm onDirtyChange={setIsFormDirty} />
           ) : tab === "settings" ? (
-            <Settings transactions={transactions} />
+            <Settings transactions={transactions} theme={theme} setTheme={setTheme} />
           ) : tab === "summary" ? (
-            <SummaryView transactions={transactions} />
+            <SummaryView transactions={transactions} theme={theme} />
           ) : (
             <Dashboard 
               onNewEntry={() => handleTabChange("form")} 
               transactions={transactions}
               initialTransactions={transactions}
+              theme={theme}
             />
           )}
         </div>

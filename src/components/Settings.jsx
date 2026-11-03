@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { subscribeToCategories, addCategory } from "../services/categories";
-import { PlusCircle, Settings2, ChevronRight, TrendingUp, TrendingDown, KeyRound, Shield, Download, FileText, Layers, LogOut } from "lucide-react";
+import { PlusCircle, Settings2, ChevronRight, TrendingUp, TrendingDown, KeyRound, Shield, Download, FileText, Layers, LogOut, Sun, Moon, Palette, Check } from "lucide-react";
 import { exportToCSV } from "../utils/export";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -10,7 +10,7 @@ import { registerModal } from "../utils/modalHistory";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 
-export default function Settings({ transactions }) {
+export default function Settings({ transactions, theme = "dark", setTheme }) {
   // Always scroll to top on mount
   useEffect(() => {
     const scroller = document.getElementById("main-scroller");
@@ -77,6 +77,71 @@ export default function Settings({ transactions }) {
           Settings
         </h2>
         <p className="text-slate-400 text-sm mt-1">Configure categories, security and data backup.</p>
+      </div>
+
+      {/* Theme & Appearance Settings */}
+      <div className="glass-card p-5 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Palette size={16} className="text-emerald-400" />
+            <h3 className="text-sm font-bold text-white uppercase tracking-widest">Theme & Appearance</h3>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            {theme === "light" ? "Light Mode Active" : "Dark Mode Active"}
+          </span>
+        </div>
+
+        <p className="text-slate-400 text-xs mb-3.5">Switch between dark slate cyber mode and clean modern light mode.</p>
+
+        <div className="grid grid-cols-2 gap-3">
+          {/* Dark Mode Option */}
+          <button
+            type="button"
+            onClick={() => setTheme?.("dark")}
+            className={`p-3.5 rounded-2xl text-left border transition-all cursor-pointer relative ${
+              theme === "dark"
+                ? "bg-slate-900 border-emerald-400 ring-2 ring-emerald-400/50 shadow-[0_0_16px_rgba(16,185,129,0.3)] scale-[1.02]"
+                : "bg-slate-900/60 border-slate-800 hover:border-slate-700 opacity-60 hover:opacity-100"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 shadow-inner">
+                <Moon size={16} />
+              </div>
+              {theme === "dark" && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 flex items-center gap-0.5">
+                  <Check size={9} /> Active
+                </span>
+              )}
+            </div>
+            <p className="text-sm font-bold text-white leading-tight">Dark Slate</p>
+            <p className="text-[11px] text-slate-400 mt-1 leading-snug">Comfortable navy & neon glow</p>
+          </button>
+
+          {/* Light Mode Option */}
+          <button
+            type="button"
+            onClick={() => setTheme?.("light")}
+            className={`p-3.5 rounded-2xl text-left border transition-all cursor-pointer relative ${
+              theme === "light"
+                ? "bg-white border-emerald-500 ring-2 ring-emerald-500/50 shadow-[0_4px_16px_rgba(16,185,129,0.25)] scale-[1.02]"
+                : "bg-slate-900/60 border-slate-800 hover:border-slate-700 opacity-60 hover:opacity-100"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-inner">
+                <Sun size={16} />
+              </div>
+              {theme === "light" && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 border border-emerald-500/40 flex items-center gap-0.5">
+                  <Check size={9} /> Active
+                </span>
+              )}
+            </div>
+            <p className="text-sm font-bold text-slate-900 leading-tight">Clean Light</p>
+            <p className="text-[11px] text-slate-500 mt-1 leading-snug">Crisp white & modern contrast</p>
+          </button>
+        </div>
       </div>
 
       {/* Category Management */}
