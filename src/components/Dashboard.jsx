@@ -340,7 +340,40 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
   const [visibleTxLimit, setVisibleTxLimit] = useState(10);
   const [netModalTxLimit, setNetModalTxLimit] = useState(10);
   const [pmCatFilter, setPmCatFilter] = useState(null);
-  const [amountsVisible, setAmountsVisible] = useState(false);
+  const [visibleAmounts, setVisibleAmounts] = useState({
+    cash: false,
+    bank: false,
+    credit: false,
+    debit: false,
+    net: false,
+  });
+
+  const toggleVisibility = (key, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setVisibleAmounts((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const allVisible = Object.values(visibleAmounts).every(Boolean);
+  const toggleAll = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const next = !allVisible;
+    setVisibleAmounts({
+      cash: next,
+      bank: next,
+      credit: next,
+      debit: next,
+      net: next,
+    });
+  };
 
   // No scroll refs needed — each modal uses a separate inner overflow-y-auto div
   // that is always a fresh DOM element, so scrollTop is always 0 on open.
@@ -766,18 +799,6 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
       count: catTx.length,
     };
   }, [selectedNetCategory, monthTransactions]);
-  // Helper to display or blur a currency value
-  const showAmt = (val, className = "") => {
-    if (amountsVisible) return <span className={className}>{val}</span>;
-    return (
-      <span
-        className={`select-none blur-sm pointer-events-none ${className}`}
-        aria-hidden="true"
-      >
-        Rs. ●●●●●
-      </span>
-    );
-  };
 
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
@@ -789,23 +810,36 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
           Overview
         </h2>
         
-        {/* Compact Month Selector */}
-        <div className="relative">
-          <select
-            id="month-select"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="appearance-none bg-slate-800/80 border border-slate-700 text-emerald-400 text-sm font-semibold rounded-full pl-9 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 backdrop-blur-md"
+        <div className="flex items-center gap-2">
+          {/* Quick Toggle All Eye Button */}
+          <button
+            type="button"
+            onClick={toggleAll}
+            title={allVisible ? "Hide All Balances" : "Show All Balances"}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-700/60 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all shadow-sm cursor-pointer shrink-0"
           >
-            {monthOptions.map((m) => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
-          <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500" />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            {allVisible ? <EyeOff size={14} className="text-emerald-400" /> : <Eye size={14} className="text-slate-400" />}
+            <span className="hidden sm:inline">{allVisible ? "Hide All" : "Show All"}</span>
+          </button>
+
+          {/* Compact Month Selector */}
+          <div className="relative">
+            <select
+              id="month-select"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="appearance-none bg-slate-800/80 border border-slate-700 text-emerald-400 text-sm font-semibold rounded-full pl-9 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 backdrop-blur-md"
+            >
+              {monthOptions.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500" />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
@@ -850,7 +884,23 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
             <span className="text-[9px] uppercase font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30 shadow-[0_0_8px_rgba(16,185,129,0.25)]">In Hand</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">{showAmt((cashBalance < 0 ? "−" : "") + formatCurrency(Math.abs(cashBalance)))}</h3>
+          <div className="flex items-center justify-between mt-1">
+            <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">
+              {visibleAmounts.cash ? (
+                (cashBalance < 0 ? "−" : "") + formatCurrency(Math.abs(cashBalance))
+              ) : (
+                <span className="blur-sm select-none">Rs. ●●●●●</span>
+              )}
+            </h3>
+            <span
+              role="button"
+              onClick={(e) => toggleVisibility("cash", e)}
+              className="p-1 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/20 active:scale-90 transition-all cursor-pointer z-10"
+              title={visibleAmounts.cash ? "Hide Cash" : "Show Cash"}
+            >
+              {visibleAmounts.cash ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          </div>
           <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Cash in hand balance</p>
         </motion.button>
         
@@ -876,7 +926,23 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
             <span className="text-[9px] uppercase font-bold text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded-full border border-sky-400/30 shadow-[0_0_8px_rgba(56,189,248,0.25)]">Account</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">{showAmt((bankBalance < 0 ? "−" : "") + formatCurrency(Math.abs(bankBalance)))}</h3>
+          <div className="flex items-center justify-between mt-1">
+            <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">
+              {visibleAmounts.bank ? (
+                (bankBalance < 0 ? "−" : "") + formatCurrency(Math.abs(bankBalance))
+              ) : (
+                <span className="blur-sm select-none">Rs. ●●●●●</span>
+              )}
+            </h3>
+            <span
+              role="button"
+              onClick={(e) => toggleVisibility("bank", e)}
+              className="p-1 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-sky-500/20 active:scale-90 transition-all cursor-pointer z-10"
+              title={visibleAmounts.bank ? "Hide Bank" : "Show Bank"}
+            >
+              {visibleAmounts.bank ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          </div>
           <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Bank account balance</p>
         </motion.button>
 
@@ -902,7 +968,23 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
             <span className="text-[9px] uppercase font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-400/30 shadow-[0_0_8px_rgba(168,85,247,0.25)]">Spends</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-purple-300 tracking-tight drop-shadow-sm">{showAmt(formatCurrency(creditCardSpent))}</h3>
+          <div className="flex items-center justify-between mt-1">
+            <h3 className="text-base sm:text-lg font-bold font-mono text-purple-300 tracking-tight drop-shadow-sm">
+              {visibleAmounts.credit ? (
+                formatCurrency(creditCardSpent)
+              ) : (
+                <span className="blur-sm select-none">Rs. ●●●●●</span>
+              )}
+            </h3>
+            <span
+              role="button"
+              onClick={(e) => toggleVisibility("credit", e)}
+              className="p-1 rounded-lg text-slate-400 hover:text-purple-400 hover:bg-purple-500/20 active:scale-90 transition-all cursor-pointer z-10"
+              title={visibleAmounts.credit ? "Hide Credit Spend" : "Show Credit Spend"}
+            >
+              {visibleAmounts.credit ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          </div>
           <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Monthly card spends</p>
         </motion.button>
 
@@ -928,7 +1010,23 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
             <span className="text-[9px] uppercase font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30 shadow-[0_0_8px_rgba(245,158,11,0.25)]">Spends</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-amber-300 tracking-tight drop-shadow-sm">{showAmt(formatCurrency(debitCardSpent))}</h3>
+          <div className="flex items-center justify-between mt-1">
+            <h3 className="text-base sm:text-lg font-bold font-mono text-amber-300 tracking-tight drop-shadow-sm">
+              {visibleAmounts.debit ? (
+                formatCurrency(debitCardSpent)
+              ) : (
+                <span className="blur-sm select-none">Rs. ●●●●●</span>
+              )}
+            </h3>
+            <span
+              role="button"
+              onClick={(e) => toggleVisibility("debit", e)}
+              className="p-1 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/20 active:scale-90 transition-all cursor-pointer z-10"
+              title={visibleAmounts.debit ? "Hide Debit Spend" : "Show Debit Spend"}
+            >
+              {visibleAmounts.debit ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          </div>
           <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Direct debit spend</p>
         </motion.button>
       </div>
@@ -964,7 +1062,23 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                   Cash • Bank • Cards
                 </span>
               </div>
-              <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-mono drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">{showAmt((netProfit < 0 ? "−" : "") + formatCurrency(Math.abs(netProfit)))}</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-mono drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+                  {visibleAmounts.net ? (
+                    (netProfit < 0 ? "−" : "") + formatCurrency(Math.abs(netProfit))
+                  ) : (
+                    <span className="blur-sm select-none">Rs. ●●●●●</span>
+                  )}
+                </h3>
+                <span
+                  role="button"
+                  onClick={(e) => toggleVisibility("net", e)}
+                  className="w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center border border-white/25 backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-sm z-10 shrink-0"
+                  title={visibleAmounts.net ? "Hide Net Balance" : "Show Net Balance"}
+                >
+                  {visibleAmounts.net ? <EyeOff size={16} /> : <Eye size={16} />}
+                </span>
+              </div>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/25 to-white/5 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.4)] group-hover:scale-110 transition-transform">
               <Wallet size={22} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
@@ -976,14 +1090,14 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             <div className="flex-1">
               <p className="text-white/70 text-[10px] uppercase font-bold tracking-wider mb-0.5">Total Income</p>
               <p className="text-emerald-300 font-bold text-sm font-mono flex items-center gap-1">
-                <TrendingUp size={14} className="text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]" />{showAmt(formatCurrency(totalIncome))}
+                <TrendingUp size={14} className="text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]" />{visibleAmounts.net ? formatCurrency(totalIncome) : <span className="blur-sm select-none">Rs. ●●●●●</span>}
               </p>
             </div>
             <div className="w-px bg-white/15 my-0.5" />
             <div className="flex-1">
               <p className="text-white/70 text-[10px] uppercase font-bold tracking-wider mb-0.5">Total Expense</p>
               <p className="text-red-300 font-bold text-sm font-mono flex items-center gap-1">
-                <TrendingDown size={14} className="text-red-400 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)]" />{showAmt(formatCurrency(totalExpense))}
+                <TrendingDown size={14} className="text-red-400 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)]" />{visibleAmounts.net ? formatCurrency(totalExpense) : <span className="blur-sm select-none">Rs. ●●●●●</span>}
               </p>
             </div>
           </div>
