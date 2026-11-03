@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { subscribeToCategories, addCategory } from "../services/categories";
-import { PlusCircle, Settings2, ChevronRight, TrendingUp, TrendingDown, KeyRound, Shield, Download, FileText, Layers, LogOut, Sun, Moon, Palette, Check } from "lucide-react";
+import { PlusCircle, Settings2, ChevronRight, TrendingUp, TrendingDown, KeyRound, Shield, Download, FileText, Layers, LogOut, Sun, Moon, Palette, Check, Fingerprint } from "lucide-react";
 import { exportToCSV } from "../utils/export";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -9,6 +9,12 @@ import PinLock from "./PinLock";
 import { registerModal } from "../utils/modalHistory";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
+import {
+  isBiometricAvailable,
+  isBiometricRegistered,
+  registerBiometric,
+  removeBiometric,
+} from "../utils/biometric";
 
 export default function Settings({ transactions, theme = "dark", setTheme }) {
   // Always scroll to top on mount
@@ -22,11 +28,15 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
   const [loading, setLoading] = useState(true);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
 
-  
   // PIN Lock states
   const [isPinEnabled, setIsPinEnabled] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinMode, setPinMode] = useState("setup"); // 'setup' or 'remove'
+
+  // Biometric states
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioRegistered, setBioRegistered] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
 
   // Register modals so back button closes them
   useEffect(() => {
@@ -51,6 +61,12 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
     const savedPin = localStorage.getItem("app_pin");
     setIsPinEnabled(!!savedPin);
 
+    // Check biometric availability
+    isBiometricAvailable().then((avail) => {
+      setBioAvailable(avail);
+      setBioRegistered(isBiometricRegistered());
+    });
+
     return unsub;
   }, []);
 
@@ -63,6 +79,37 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
       window.location.reload();
     } catch (err) {
       toast.error("Logout failed");
+    }
+  };
+
+  const handleBioToggle = async () => {
+    if (bioLoading) return;
+    if (bioRegistered) {
+      // Disable biometric
+      removeBiometric();
+      setBioRegistered(false);
+      toast.success("Fingerprint unlock disabled.");
+    } else {
+      // Enable biometric
+      if (!isPinEnabled) {
+        toast.error("Set up a PIN first before enabling fingerprint.");
+        return;
+      }
+      setBioLoading(true);
+      const toastId = toast.loading("Setting up fingerprint…");
+      try {
+        const success = await registerBiometric();
+        if (success) {
+          setBioRegistered(true);
+          toast.success("Fingerprint enabled! You can now unlock with your fingerprint.", { id: toastId });
+        } else {
+          toast.error("Fingerprint setup cancelled or not supported.", { id: toastId });
+        }
+      } catch {
+        toast.error("Fingerprint setup failed.", { id: toastId });
+      } finally {
+        setBioLoading(false);
+      }
     }
   };
 
@@ -84,7 +131,7 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Palette size={16} className="text-emerald-400" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-widest">Theme & Appearance</h3>
+            <h3 className="text-sm font-bold text-white uppercase tracking-widest">Theme &amp; Appearance</h3>
           </div>
           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
             {theme === "light" ? "Light Mode Active" : "Dark Mode Active"}
@@ -115,7 +162,7 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
               )}
             </div>
             <p className="text-sm font-bold text-white leading-tight">Dark Slate</p>
-            <p className="text-[11px] text-slate-400 mt-1 leading-snug">Comfortable navy & neon glow</p>
+            <p className="text-[11px] text-slate-400 mt-1 leading-snug">Comfortable navy &amp; neon glow</p>
           </button>
 
           {/* Light Mode Option */}
@@ -138,8 +185,8 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
                 </span>
               )}
             </div>
-            <p className="text-sm font-bold text-slate-900 leading-tight">Clean Light</p>
-            <p className="text-[11px] text-slate-500 mt-1 leading-snug">Crisp white & modern contrast</p>
+            <p className="text-sm font-bold leading-tight" style={{ color: theme === "light" ? "#0f172a" : "#fff" }}>Clean Light</p>
+            <p className="text-[11px] text-slate-400 mt-1 leading-snug">Fresh white modern UI</p>
           </button>
         </div>
       </div>
@@ -203,6 +250,7 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
         </div>
         
         <div className="space-y-3">
+          {/* PIN Toggle */}
           <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900/50 border border-slate-800">
             <div>
               <span className="text-white text-sm font-semibold block">App PIN Lock</span>
@@ -230,6 +278,51 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
               />
             </button>
           </div>
+
+          {/* Fingerprint / Biometric Toggle — only shown if device supports it */}
+          {bioAvailable && isPinEnabled && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900/50 border border-slate-800"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                  bioRegistered ? "bg-emerald-500/15 border border-emerald-500/30" : "bg-slate-800 border border-slate-700"
+                }`}>
+                  <Fingerprint size={18} className={bioRegistered ? "text-emerald-400" : "text-slate-500"} />
+                </div>
+                <div>
+                  <span className="text-white text-sm font-semibold block">Fingerprint Unlock</span>
+                  <span className="text-slate-400 text-xs block mt-0.5">
+                    {bioRegistered ? "Active — tap fingerprint sensor to unlock" : "Unlock faster with your fingerprint"}
+                  </span>
+                </div>
+              </div>
+              
+              <button
+                onClick={handleBioToggle}
+                disabled={bioLoading}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-60 ${
+                  bioRegistered ? "bg-emerald-500 shadow-lg shadow-emerald-500/25" : "bg-slate-700"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    bioRegistered ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </motion.div>
+          )}
+
+          {/* Show note if bio not available */}
+          {!bioAvailable && isPinEnabled && (
+            <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-900/30 border border-slate-800/60">
+              <Fingerprint size={15} className="text-slate-600 shrink-0" />
+              <span className="text-slate-500 text-xs">Fingerprint not supported on this device/browser</span>
+            </div>
+          )}
 
           {/* Change PIN button when enabled */}
           {isPinEnabled && (
@@ -306,8 +399,6 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
               </motion.button>
             </div>
           </div>
-
-
         </div>
       </div>
 
@@ -345,6 +436,7 @@ export default function Settings({ transactions, theme = "dark", setTheme }) {
             mode={pinMode}
             onSuccess={() => {
               setIsPinEnabled(!!localStorage.getItem("app_pin"));
+              setBioRegistered(isBiometricRegistered());
               setShowPinSetup(false);
             }}
             onClose={() => setShowPinSetup(false)}

@@ -1,8 +1,14 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Delete, X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Delete, X, Fingerprint } from "lucide-react";
 import toast from "react-hot-toast";
 import Logo from "./Logo";
+import {
+  isBiometricAvailable,
+  isBiometricRegistered,
+  registerBiometric,
+  verifyBiometric,
+} from "../utils/biometric";
 
 const PIN_LENGTH = 4;
 
@@ -16,10 +22,32 @@ export default function PinLock({ mode = "verify", onSuccess, onClose }) {
   // For "change" mode: step 1=verify old, step 2=enter new, step 3=confirm new
   const [changeStep, setChangeStep] = useState(1);
 
+  // Biometric state
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioRegistered, setBioRegistered] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
+
   const shakeVariants = {
     shake: { x: [-10, 10, -10, 10, -5, 5, 0], transition: { duration: 0.4 } },
     normal: { x: 0 },
   };
+
+  // Check biometric availability on mount
+  useEffect(() => {
+    isBiometricAvailable().then((avail) => {
+      setBioAvailable(avail);
+      setBioRegistered(isBiometricRegistered());
+    });
+  }, []);
+
+  // Auto-trigger fingerprint on verify mode if already registered
+  useEffect(() => {
+    if (mode === "verify" && bioAvailable && bioRegistered) {
+      // Small delay so the screen has time to render
+      const timer = setTimeout(() => handleBiometricVerify(), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [mode, bioAvailable, bioRegistered]);
 
   useEffect(() => {
     if (pin.length === PIN_LENGTH) {
@@ -43,6 +71,46 @@ export default function PinLock({ mode = "verify", onSuccess, onClose }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isError, pin, onClose, mode]);
+
+  // ---------- Biometric handlers ----------
+
+  const handleBiometricVerify = useCallback(async () => {
+    if (bioLoading) return;
+    setBioLoading(true);
+    try {
+      const success = await verifyBiometric();
+      if (success) {
+        triggerSuccess(onSuccess);
+      } else {
+        toast.error("Fingerprint not recognised. Use your PIN.");
+      }
+    } catch {
+      toast.error("Biometric verification failed. Use your PIN.");
+    } finally {
+      setBioLoading(false);
+    }
+  }, [bioLoading, onSuccess]);
+
+  const handleBiometricEnroll = async () => {
+    if (bioLoading) return;
+    setBioLoading(true);
+    const toastId = toast.loading("Setting up fingerprint…");
+    try {
+      const success = await registerBiometric();
+      if (success) {
+        setBioRegistered(true);
+        toast.success("Fingerprint enrolled! You can now unlock with your fingerprint.", { id: toastId });
+      } else {
+        toast.error("Fingerprint setup cancelled or failed.", { id: toastId });
+      }
+    } catch {
+      toast.error("Fingerprint setup failed.", { id: toastId });
+    } finally {
+      setBioLoading(false);
+    }
+  };
+
+  // ---------- PIN handlers ----------
 
   const handlePinComplete = (enteredPin) => {
     if (mode === "verify") {
@@ -189,6 +257,9 @@ export default function PinLock({ mode = "verify", onSuccess, onClose }) {
 
   const stepIndicator = getStepIndicator();
 
+  // Show enroll prompt after PIN verified in setup mode's step 1 completion
+  // (we let the Settings page handle enroll separately via the button below)
+
   return (
     <div className="fixed inset-0 z-[100] bg-slate-950 overflow-y-auto">
       <div className="min-h-full flex flex-col items-center justify-center px-6 py-8 pb-32">
@@ -242,8 +313,30 @@ export default function PinLock({ mode = "verify", onSuccess, onClose }) {
             </motion.button>
           ))}
 
-          {/* Bottom row: blank | 0 | delete */}
-          <div />
+          {/* Bottom row: fingerprint | 0 | delete */}
+          {/* Fingerprint button (only in verify mode and biometric is registered) */}
+          <div className="flex items-center justify-center" style={{ aspectRatio: '1 / 1' }}>
+            <AnimatePresence>
+              {mode === "verify" && bioAvailable && bioRegistered && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  whileTap={{ scale: 0.85 }}
+                  onClick={handleBiometricVerify}
+                  disabled={bioLoading}
+                  title="Unlock with fingerprint"
+                  className="relative w-14 h-14 rounded-full flex items-center justify-center text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 active:bg-emerald-500/20 transition-all disabled:opacity-50"
+                >
+                  <Fingerprint size={28} />
+                  {/* Pulse ring when loading */}
+                  {bioLoading && (
+                    <span className="absolute inset-0 rounded-full border-2 border-emerald-400/60 animate-ping" />
+                  )}
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
 
           <motion.button
             whileTap={{ scale: 0.85 }}
@@ -263,6 +356,43 @@ export default function PinLock({ mode = "verify", onSuccess, onClose }) {
             <Delete size={22} />
           </motion.button>
         </div>
+
+        {/* Enroll fingerprint prompt — only in verify mode, bio available, not yet registered */}
+        {mode === "verify" && bioAvailable && !bioRegistered && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8 flex flex-col items-center gap-2"
+          >
+            <p className="text-slate-500 text-xs text-center">
+              Speed up login with your fingerprint
+            </p>
+            <button
+              onClick={async () => {
+                // First verify PIN is correct, then enroll
+                if (pin.length < PIN_LENGTH) {
+                  toast("Enter your PIN first, then we'll set up fingerprint.", { icon: "🔐" });
+                  return;
+                }
+                const savedPin = localStorage.getItem("app_pin");
+                if (pin === savedPin) {
+                  await handleBiometricEnroll();
+                  if (isBiometricRegistered()) {
+                    triggerSuccess(onSuccess);
+                  }
+                } else {
+                  triggerError("Incorrect PIN");
+                }
+              }}
+              disabled={bioLoading}
+              className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-sm font-semibold px-4 py-2 rounded-xl border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all"
+            >
+              <Fingerprint size={16} />
+              Set up Fingerprint
+            </button>
+          </motion.div>
+        )}
       </div>
     </div>
   );
