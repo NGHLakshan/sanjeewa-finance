@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+﻿import { useEffect, useState, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { subscribeToTransactions } from "../services/transactions";
 import { subscribeToCategories, addCategory, updateCategory, deleteCategory } from "../services/categories";
-import { TrendingUp, TrendingDown, Wallet, Calendar, Filter, PlusCircle, Building2, X, Settings2, Check, Trash2, ChevronLeft, ChevronRight, ArrowLeft, Layers, Pencil, Clock, CreditCard, Banknote } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Calendar, Filter, PlusCircle, Building2, X, Settings2, Check, Trash2, ChevronLeft, ChevronRight, ArrowLeft, Layers, Pencil, Clock, CreditCard, Banknote, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from "recharts";
 import CategoryManagerModal from "./CategoryManagerModal";
@@ -340,6 +340,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
   const [visibleTxLimit, setVisibleTxLimit] = useState(10);
   const [netModalTxLimit, setNetModalTxLimit] = useState(10);
   const [pmCatFilter, setPmCatFilter] = useState(null);
+  const [amountsVisible, setAmountsVisible] = useState(false);
 
   // No scroll refs needed — each modal uses a separate inner overflow-y-auto div
   // that is always a fresh DOM element, so scrollTop is always 0 on open.
@@ -765,6 +766,19 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
       count: catTx.length,
     };
   }, [selectedNetCategory, monthTransactions]);
+  // Helper to display or blur a currency value
+  const showAmt = (val, className = "") => {
+    if (amountsVisible) return <span className={className}>{val}</span>;
+    return (
+      <span
+        className={`select-none blur-sm pointer-events-none ${className}`}
+        aria-hidden="true"
+      >
+        Rs. ●●●●●
+      </span>
+    );
+  };
+
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
   return (
@@ -836,9 +850,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
             <span className="text-[9px] uppercase font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-400/30 shadow-[0_0_8px_rgba(16,185,129,0.25)]">In Hand</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">
-            {cashBalance < 0 && "−"}{formatCurrency(Math.abs(cashBalance))}
-          </h3>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">{showAmt((cashBalance < 0 ? "−" : "") + formatCurrency(Math.abs(cashBalance)))}</h3>
           <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Cash in hand balance</p>
         </motion.button>
         
@@ -864,9 +876,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
             <span className="text-[9px] uppercase font-bold text-sky-300 bg-sky-500/20 px-2 py-0.5 rounded-full border border-sky-400/30 shadow-[0_0_8px_rgba(56,189,248,0.25)]">Account</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">
-            {bankBalance < 0 && "−"}{formatCurrency(Math.abs(bankBalance))}
-          </h3>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-white tracking-tight drop-shadow-sm">{showAmt((bankBalance < 0 ? "−" : "") + formatCurrency(Math.abs(bankBalance)))}</h3>
           <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Bank account balance</p>
         </motion.button>
 
@@ -892,9 +902,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
             <span className="text-[9px] uppercase font-bold text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-400/30 shadow-[0_0_8px_rgba(168,85,247,0.25)]">Spends</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-purple-300 tracking-tight drop-shadow-sm">
-            {formatCurrency(creditCardSpent)}
-          </h3>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-purple-300 tracking-tight drop-shadow-sm">{showAmt(formatCurrency(creditCardSpent))}</h3>
           <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Monthly card spends</p>
         </motion.button>
 
@@ -920,9 +928,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             </div>
             <span className="text-[9px] uppercase font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30 shadow-[0_0_8px_rgba(245,158,11,0.25)]">Spends</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold font-mono text-amber-300 tracking-tight drop-shadow-sm">
-            {formatCurrency(debitCardSpent)}
-          </h3>
+          <h3 className="text-base sm:text-lg font-bold font-mono text-amber-300 tracking-tight drop-shadow-sm">{showAmt(formatCurrency(debitCardSpent))}</h3>
           <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Direct debit spend</p>
         </motion.button>
       </div>
@@ -958,9 +964,7 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
                   Cash • Bank • Cards
                 </span>
               </div>
-              <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-mono drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
-                {netProfit < 0 && "−"}{formatCurrency(Math.abs(netProfit))}
-              </h3>
+              <h3 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-mono drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">{showAmt((netProfit < 0 ? "−" : "") + formatCurrency(Math.abs(netProfit)))}</h3>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/25 to-white/5 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-[0_4px_14px_rgba(0,0,0,0.3),inset_0_1px_1px_rgba(255,255,255,0.4)] group-hover:scale-110 transition-transform">
               <Wallet size={22} className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
@@ -972,16 +976,14 @@ export default function Dashboard({ onNewEntry, transactions: propTransactions, 
             <div className="flex-1">
               <p className="text-white/70 text-[10px] uppercase font-bold tracking-wider mb-0.5">Total Income</p>
               <p className="text-emerald-300 font-bold text-sm font-mono flex items-center gap-1">
-                <TrendingUp size={14} className="text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
-                {formatCurrency(totalIncome)}
+                <TrendingUp size={14} className="text-emerald-400 drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]" />{showAmt(formatCurrency(totalIncome))}
               </p>
             </div>
             <div className="w-px bg-white/15 my-0.5" />
             <div className="flex-1">
               <p className="text-white/70 text-[10px] uppercase font-bold tracking-wider mb-0.5">Total Expense</p>
               <p className="text-red-300 font-bold text-sm font-mono flex items-center gap-1">
-                <TrendingDown size={14} className="text-red-400 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
-                {formatCurrency(totalExpense)}
+                <TrendingDown size={14} className="text-red-400 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)]" />{showAmt(formatCurrency(totalExpense))}
               </p>
             </div>
           </div>
