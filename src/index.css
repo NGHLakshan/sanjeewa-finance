@@ -203,38 +203,35 @@
 }
 
 
-/* ── COMPREHENSIVE LIGHT THEME RULES ── */
+/* ── COMPREHENSIVE HIGH-CONTRAST LIGHT THEME RULES ── */
+
+/* 1. Global & Cards */
 body.light .glass-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%) !important;
-  border: 1px solid rgba(226, 232, 240, 0.95) !important;
-  border-top: 1px solid rgba(255, 255, 255, 1) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.9) !important;
-  box-shadow: 
-    0 10px 25px -5px rgba(15, 23, 42, 0.06),
-    0 4px 6px -2px rgba(15, 23, 42, 0.03),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-top: 1px solid #f1f5f9 !important;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.03) !important;
   color: #0f172a !important;
 }
 
 body.light .glass-card:hover {
-  border-color: rgba(203, 213, 225, 1) !important;
-  box-shadow: 
-    0 14px 28px -6px rgba(15, 23, 42, 0.09),
-    0 4px 10px -2px rgba(16, 185, 129, 0.12),
-    inset 0 1px 2px 0 rgba(255, 255, 255, 1) !important;
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08) !important;
 }
 
 body.light .glass-panel {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.98) 100%) !important;
-  border: 1px solid rgba(226, 232, 240, 0.9) !important;
-  border-bottom: 1px solid rgba(203, 213, 225, 0.8) !important;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05) !important;
 }
 
-/* Light theme background overrides */
+/* 2. Background Overrides */
 body.light .bg-slate-950,
-body.light .bg-slate-950\/80 {
-  background-color: #f1f5f9 !important;
+body.light .bg-slate-950\/80,
+body.light .bg-slate-950\/90 {
+  background-color: #f8fafc !important;
 }
 
 body.light .bg-slate-900,
@@ -244,7 +241,8 @@ body.light .bg-slate-900\/70,
 body.light .bg-slate-900\/60,
 body.light .bg-slate-900\/50,
 body.light .bg-slate-900\/40 {
-  background-color: rgba(255, 255, 255, 0.92) !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 body.light .bg-slate-800,
@@ -268,24 +266,16 @@ body.light .border-slate-700\/50 {
   border-color: #e2e8f0 !important;
 }
 
-/* Text color adaptations */
-body.light h1:not([class*="gradient"]):not([class*="from-"]),
-body.light h2:not([class*="gradient"]):not([class*="from-"]),
-body.light h3:not([class*="gradient"]):not([class*="from-"]),
-body.light h4:not([class*="gradient"]):not([class*="from-"]) {
-  color: #0f172a;
-}
-
-body.light .text-white:not([class*="bg-gradient"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="from-"]):not([class*="btn-"]):not([class*="btn3d"]):not(.keep-white) {
+/* 3. High-Contrast Text & Typography */
+body.light h1:not([class*="gradient"]),
+body.light h2,
+body.light h3,
+body.light h4 {
   color: #0f172a !important;
 }
 
-body.light [class*="bg-gradient"] .text-white,
-body.light [class*="from-emerald"] .text-white,
-body.light [class*="from-red"] .text-white,
-body.light .btn-3d-emerald,
-body.light .btn-3d-emerald * {
-  color: #ffffff !important;
+body.light .text-white {
+  color: #0f172a !important;
 }
 
 body.light .text-slate-100,
@@ -294,32 +284,209 @@ body.light .text-slate-200 {
 }
 
 body.light .text-slate-300 {
-  color: #334155 !important;
+  color: #334155 !important; /* Crisp slate-700 */
 }
 
 body.light .text-slate-400 {
-  color: #64748b !important;
+  color: #475569 !important; /* Crisp slate-600 */
 }
 
 body.light .text-slate-500 {
-  color: #64748b !important;
+  color: #64748b !important; /* Clear slate-500 */
 }
 
-/* Form inputs in light mode */
+body.light .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+/* Header Logo / Gradient Text in light mode */
+body.light header .gradient-text {
+  background-image: linear-gradient(to right, #047857, #0284c7) !important;
+}
+
+/* 4. Vivid High-Contrast Amount Colors */
+body.light .text-emerald-400,
+body.light .text-emerald-300 {
+  color: #047857 !important; /* Dark rich emerald for income */
+}
+
+body.light .text-red-400,
+body.light .text-red-300 {
+  color: #dc2626 !important; /* Bold crimson red for expense */
+}
+
+body.light .text-purple-400,
+body.light .text-purple-300 {
+  color: #7e22ce !important; /* Rich deep purple */
+}
+
+body.light .text-amber-400,
+body.light .text-amber-300 {
+  color: #b45309 !important; /* Rich warm amber */
+}
+
+body.light .text-sky-400,
+body.light .text-sky-300 {
+  color: #0284c7 !important; /* Rich royal sky blue */
+}
+
+/* 5. Four Main Dashboard Payment Cards */
+/* Cash Card */
+body.light [class*="to-emerald-950"] {
+  background: linear-gradient(145deg, #ffffff 0%, #ecfdf5 100%) !important;
+  border-color: #86efac !important;
+  box-shadow: 0 6px 18px -4px rgba(16, 185, 129, 0.16) !important;
+}
+body.light [class*="to-emerald-950"] h3 {
+  color: #047857 !important;
+}
+body.light [class*="to-emerald-950"] .text-emerald-300 {
+  color: #047857 !important;
+  background-color: #d1fae5 !important;
+  border-color: #86efac !important;
+}
+
+/* Bank Transfer Card */
+body.light [class*="to-sky-950"] {
+  background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%) !important;
+  border-color: #7dd3fc !important;
+  box-shadow: 0 6px 18px -4px rgba(56, 189, 248, 0.16) !important;
+}
+body.light [class*="to-sky-950"] h3 {
+  color: #0284c7 !important;
+}
+body.light [class*="to-sky-950"] .text-sky-300 {
+  color: #0369a1 !important;
+  background-color: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+}
+
+/* Credit Card */
+body.light [class*="to-purple-950"] {
+  background: linear-gradient(145deg, #ffffff 0%, #faf5ff 100%) !important;
+  border-color: #d8b4fe !important;
+  box-shadow: 0 6px 18px -4px rgba(168, 85, 247, 0.16) !important;
+}
+body.light [class*="to-purple-950"] h3,
+body.light [class*="to-purple-950"] .text-purple-300 {
+  color: #7e22ce !important;
+}
+body.light [class*="to-purple-950"] span.text-purple-300 {
+  color: #7e22ce !important;
+  background-color: #f3e8ff !important;
+  border-color: #d8b4fe !important;
+}
+
+/* Debit Card */
+body.light [class*="to-amber-950"] {
+  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%) !important;
+  border-color: #fde047 !important;
+  box-shadow: 0 6px 18px -4px rgba(245, 158, 11, 0.16) !important;
+}
+body.light [class*="to-amber-950"] h3,
+body.light [class*="to-amber-950"] .text-amber-300 {
+  color: #b45309 !important;
+}
+body.light [class*="to-amber-950"] span.text-amber-300 {
+  color: #b45309 !important;
+  background-color: #fef3c7 !important;
+  border-color: #fde047 !important;
+}
+
+/* 6. Solid Gradient Banners (Net Balance & Hero Cards) - Keep White Text */
+body.light [class*="from-emerald-600"],
+body.light [class*="from-rose-800"],
+body.light [class*="from-red-800"] {
+  color: #ffffff !important;
+}
+
+body.light [class*="from-emerald-600"] *,
+body.light [class*="from-rose-800"] *,
+body.light [class*="from-red-800"] * {
+  color: #ffffff !important;
+}
+
+body.light [class*="from-emerald-600"] .text-emerald-300,
+body.light [class*="from-emerald-600"] .text-emerald-400,
+body.light [class*="from-rose-800"] .text-emerald-300,
+body.light [class*="from-rose-800"] .text-emerald-400,
+body.light [class*="from-red-800"] .text-emerald-300,
+body.light [class*="from-red-800"] .text-emerald-400 {
+  color: #a7f3d0 !important;
+}
+
+body.light [class*="from-emerald-600"] .text-red-300,
+body.light [class*="from-emerald-600"] .text-red-400,
+body.light [class*="from-rose-800"] .text-red-300,
+body.light [class*="from-rose-800"] .text-red-400,
+body.light [class*="from-red-800"] .text-red-300,
+body.light [class*="from-red-800"] .text-red-400 {
+  color: #fca5a5 !important;
+}
+
+body.light .btn-3d-emerald,
+body.light .btn-3d-emerald * {
+  color: #ffffff !important;
+}
+
+/* 7. Payment Badges in Lists */
+body.light span.bg-emerald-500\/15 {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #a7f3d0 !important;
+  font-weight: 700 !important;
+}
+
+body.light span.bg-sky-500\/15 {
+  background-color: #f0f9ff !important;
+  color: #0369a1 !important;
+  border-color: #bae6fd !important;
+  font-weight: 700 !important;
+}
+
+body.light span.bg-purple-500\/15 {
+  background-color: #faf5ff !important;
+  color: #7e22ce !important;
+  border-color: #e9d5ff !important;
+  font-weight: 700 !important;
+}
+
+body.light span.bg-amber-500\/15 {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+  font-weight: 700 !important;
+}
+
+/* 8. Transaction List Icon Containers */
+body.light .bg-emerald-500\/10 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #047857 !important;
+}
+
+body.light .bg-red-500\/10 {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #dc2626 !important;
+}
+
+/* 9. Form Inputs & Select in Light Mode */
 body.light .form-input {
   background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
+  border: 1.5px solid #cbd5e1 !important;
   color: #0f172a !important;
-  box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 0 0 rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
 }
 
 body.light .form-input:focus {
   border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
 }
 
 body.light .form-label {
   color: #334155 !important;
+  font-weight: 700 !important;
 }
 
 body.light select option {
@@ -327,40 +494,82 @@ body.light select option {
   color: #0f172a !important;
 }
 
-body.light input[type='date']::-webkit-calendar-picker-indicator {
-  filter: none !important;
-}
-
+body.light input[type='date']::-webkit-calendar-picker-indicator,
 body.light input[type='time']::-webkit-calendar-picker-indicator {
   filter: none !important;
 }
 
-/* Payment cards tinted in light mode */
-body.light [class*="to-emerald-950"] {
-  background: linear-gradient(145deg, #ffffff 0%, #ecfdf5 100%) !important;
-  border-color: #a7f3d0 !important;
-  box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.12), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+/* 10. Buttons & Interactive Chips */
+body.light button.bg-slate-900\/60,
+body.light button.bg-slate-900\/50,
+body.light button.bg-slate-900\/40,
+body.light button.bg-slate-900 {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
-body.light [class*="to-sky-950"] {
-  background: linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%) !important;
-  border-color: #bae6fd !important;
-  box-shadow: 0 8px 20px -4px rgba(56, 189, 248, 0.12), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+body.light button.bg-slate-900\/60:hover,
+body.light button.bg-slate-900\/40:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
 }
 
-body.light [class*="to-purple-950"] {
-  background: linear-gradient(145deg, #ffffff 0%, #faf5ff 100%) !important;
-  border-color: #e9d5ff !important;
-  box-shadow: 0 8px 20px -4px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+body.light button.bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #86efac !important;
+  font-weight: 700 !important;
 }
 
-body.light [class*="to-amber-950"] {
-  background: linear-gradient(145deg, #ffffff 0%, #fffbeb 100%) !important;
-  border-color: #fde68a !important;
-  box-shadow: 0 8px 20px -4px rgba(245, 158, 11, 0.12), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+body.light button.bg-red-500\/20 {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+  font-weight: 700 !important;
 }
 
-/* Recharts Tooltips and Grids in Light Mode */
+/* 11. Pagination Controls */
+body.light .border-slate-800\/60.bg-slate-900\/40 {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+}
+
+body.light .border-slate-700\/80.bg-slate-800\/80 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light .border-slate-700\/80.bg-slate-800\/80:hover {
+  background-color: #f8fafc !important;
+  border-color: #10b981 !important;
+  color: #0f172a !important;
+}
+
+/* 12. Modals in Light Mode */
+body.light .fixed.inset-0.z-\[100\],
+body.light .fixed.inset-0.z-\[110\] {
+  background-color: #f8fafc !important;
+}
+
+body.light .fixed.inset-0 .bg-slate-950\/90,
+body.light .fixed.inset-0 .bg-slate-950 {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light .fixed.inset-0 .bg-slate-800 {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+/* 13. Recharts in Light Mode */
 body.light .recharts-default-tooltip {
   background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
