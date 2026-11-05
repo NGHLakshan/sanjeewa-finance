@@ -1,37 +1,44 @@
 <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="lux-bg" cx="50%" cy="20%" r="85%">
-      <stop offset="0%" stop-color="#064e3b" />
-      <stop offset="50%" stop-color="#022c22" />
-      <stop offset="100%" stop-color="#020806" />
+    <!-- Dark navy radial background -->
+    <radialGradient id="biz-bg" cx="50%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#162038" />
+      <stop offset="60%" stop-color="#0c1222" />
+      <stop offset="100%" stop-color="#070b14" />
     </radialGradient>
-    <linearGradient id="lux-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fef08a" />
-      <stop offset="35%" stop-color="#f59e0b" />
-      <stop offset="70%" stop-color="#d97706" />
-      <stop offset="100%" stop-color="#fef08a" />
-    </linearGradient>
-    <radialGradient id="coin-face" cx="50%" cy="30%" r="70%">
-      <stop offset="0%" stop-color="#064e3b" />
-      <stop offset="65%" stop-color="#022c22" />
-      <stop offset="100%" stop-color="#01140e" />
-    </radialGradient>
-    <linearGradient id="s-lux-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fde047" />
-      <stop offset="35%" stop-color="#34d399" />
-      <stop offset="70%" stop-color="#10b981" />
+
+    <!-- Part 1 Emerald Gradient -->
+    <linearGradient id="biz-emerald-1" x1="25%" y1="15%" x2="80%" y2="85%">
+      <stop offset="0%" stop-color="#00f59b" />
+      <stop offset="40%" stop-color="#10b981" />
       <stop offset="100%" stop-color="#059669" />
     </linearGradient>
+
+    <!-- Part 2 Emerald Facet Gradient -->
+    <linearGradient id="biz-emerald-2" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+
+    <!-- Subtle neon ambient drop shadow -->
+    <filter id="emblem-glow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#10b981" flood-opacity="0.35" />
+    </filter>
   </defs>
-  <rect width="120" height="120" rx="34" fill="url(#lux-bg)" />
-  <rect x="2.5" y="2.5" width="115" height="115" rx="31.5" stroke="url(#lux-gold)" stroke-width="3" stroke-opacity="0.9" />
-  <circle cx="60" cy="60" r="41" fill="url(#coin-face)" stroke="url(#lux-gold)" stroke-width="3.5" />
-  <circle cx="60" cy="60" r="37" stroke="#10b981" stroke-width="1.2" stroke-opacity="0.85" />
-  <path d="M74 41 C74 33 66 28 55 28 C41 28 32 35 32 46 C32 58 46 61 60 64 C73 67 80 72 80 82 C80 93 69 99 55 99 C39 99 30 92 30 83" stroke="#000000" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.65" transform="translate(0, 3)" />
-  <path d="M74 41 C74 33 66 28 55 28 C41 28 32 35 32 46 C32 58 46 61 60 64 C73 67 80 72 80 82 C80 93 69 99 55 99 C39 99 30 92 30 83" stroke="url(#s-lux-grad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M71 39 C71 35 65 31 55 31 C43 31 36 36 36 44 C36 54 48 58 61 61 C72 64 77 69 77 79 C77 88 67 94 55 94 C42 94 34 88 34 83" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85" />
-  <g transform="translate(88, 30)">
-    <path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z" fill="#ffffff" />
-    <circle cx="0" cy="0" r="1.5" fill="#f59e0b" />
-  </g>
+
+  <!-- 1. Circular Dark Navy Base -->
+  <circle cx="60" cy="60" r="56" fill="url(#biz-bg)" stroke="#10b981" stroke-width="1.5" stroke-opacity="0.3" />
+
+  <!-- 2. Part 1: Main Chevron Apex, Left Leg & Crossbar -->
+  <path
+    d="M60 23.5 L84.5 53.5 L69 53.5 L60 41.5 L46.5 63 L69.5 63 L69.5 76 L38.5 76 L33 95 L19.5 95 Z"
+    fill="url(#biz-emerald-1)"
+    filter="url(#emblem-glow)"
+  />
+
+  <!-- 3. Part 2: Lower Right Geometric Leg -->
+  <polygon
+    points="73.5,63 87.5,63 99,95 85,95"
+    fill="url(#biz-emerald-2)"
+  />
 </svg>
