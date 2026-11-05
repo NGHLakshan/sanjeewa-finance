@@ -29,16 +29,16 @@
   <!-- 1. Circular Dark Navy Base -->
   <circle cx="60" cy="60" r="56" fill="url(#biz-bg)" stroke="#10b981" stroke-width="1.5" stroke-opacity="0.3" />
 
-  <!-- 2. Part 1: Main Chevron Apex, Left Leg & Crossbar -->
+  <!-- 2. Part 1: Upper Geometric 'S' Facet (Top Bar, Left Spine, Upper Crossbar) -->
   <path
-    d="M60 23.5 L84.5 53.5 L69 53.5 L60 41.5 L46.5 63 L69.5 63 L69.5 76 L38.5 76 L33 95 L19.5 95 Z"
+    d="M92 24 L44 24 L28 40 L28 56 L68 56 L57 67 L38 67 L42 63 L42 44 L46 38 L78 38 Z"
     fill="url(#biz-emerald-1)"
     filter="url(#emblem-glow)"
   />
 
-  <!-- 3. Part 2: Lower Right Geometric Leg -->
-  <polygon
-    points="73.5,63 87.5,63 99,95 85,95"
+  <!-- 3. Part 2: Lower Geometric 'S' Facet (Bottom Bar, Right Spine, Lower Crossbar) -->
+  <path
+    d="M28 96 L76 96 L92 80 L92 64 L52 64 L63 53 L82 53 L78 57 L78 76 L74 82 L42 82 Z"
     fill="url(#biz-emerald-2)"
   />
 </svg>
